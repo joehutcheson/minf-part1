@@ -61,7 +61,9 @@ def get_delta_translation(nusc, annotation):
     ego_pose = nusc.get('ego_pose', sample_data['ego_pose_token'])
 
     ego_translation = np.array(ego_pose['translation'])
+    ego_translation = ego_translation[0:2]
+
     annotation_translation = np.array(annotation['translation'])
-    annotation_translation[2] = 0  # set z coordinate to zero
+    annotation_translation = annotation_translation[0:2]
 
     return annotation_translation - ego_translation

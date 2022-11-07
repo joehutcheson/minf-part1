@@ -183,6 +183,8 @@ def find_heading(v):
         Returns:
             heading
     '''
+    v = v[0:2] # ensure 2-dimensional
+
     return v / np.linalg.norm(v)
 
 def find_perpendicular_heading(heading):
@@ -195,7 +197,7 @@ def find_perpendicular_heading(heading):
         Returns:
             perpendicular_heading
     '''
-    return np.array([heading[1], -heading[0], heading[2]])
+    return np.array([heading[1], -heading[0]])
 
 
 def isRightOf(v, p1, p2):
@@ -218,7 +220,7 @@ def isRightOf(v, p1, p2):
     p2 = p2[0:2]
 
     # calculate anti clockwise angle of heading from y axis
-    theta = (np.arctan2(v[0], v[1]) - np.pi/2) % (2 * np.pi)
+    theta = np.arctan2(v[0], v[1])
 
     def rotation(a, p):
         R = np.array([[np.cos(a),-np.sin(a)],[np.sin(a), np.cos(a)]])
@@ -227,9 +229,10 @@ def isRightOf(v, p1, p2):
     p1 = rotation(theta, p1)
     p2 = rotation(theta, p2)
 
-    if p1[1] > p2[1]:
+    # compare x values to determine left and right
+    if p1[0] > p2[0]:
         return True
-    if p1[1] < p2[1]:
+    if p1[0] < p2[0]:
         return False
     return None
     
