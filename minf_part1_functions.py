@@ -12,7 +12,10 @@ def generate_scores_for_instance(nusc, instance_token):
             instance_token (str): Token of instance
 
         Returns:
-            scores: list of values from 0 to 1 to describe saftey across scene
+            scores: list of dict containing
+                annotation: annotation token
+                reason: reason for score. If perfect score then None
+                score: from 0 to 1 to describe saftey across scene
     '''
     first_annotation_token = nusc.get('instance', instance_token)['first_annotation_token']
     annotation = nusc.get('sample_annotation', first_annotation_token)
@@ -38,10 +41,10 @@ def generate_scores_for_instance(nusc, instance_token):
         ego_is_right = isRightOf(ego_heading, np.zeros(2), translation)
 
         # find the longitudnal and lateral velocities w.r.t the heading of the ego
-        v_ego_long = v_ego * ego_heading
-        v_ego_lat = v_ego * perp_ego_heading
-        v_ann_long = v_ann * ego_heading
-        v_ann_lat = v_ann * perp_ego_heading
+        v_ego_long = v_ego[0:2] * ego_heading
+        v_ego_lat = v_ego[0:2] * perp_ego_heading
+        v_ann_long = v_ann[0:2] * ego_heading
+        v_ann_lat = v_ann[0:2] * perp_ego_heading
 
         if ego_is_behind:
             # find the longitudnal distance between the vehicles w.r.t the
@@ -71,7 +74,20 @@ def generate_scores_for_instance(nusc, instance_token):
         
         # if either the lateral distance or the longitudal distance is okay,
         # then we consider the situation safe, hence max of each score is used
-        scores.append(max([long_score, lat_score]))
+        max_score = max([long_score, lat_score])
+
+        # note the reason for the score
+        if max_score == 1:
+            reason = None
+        elif max_score == long_score:
+            reason = 'Following too close'
+        elif max_score == lat_score:
+            reason == 'Laterally too close'
+        scores.append({
+            'annotation':annotation['token'], 
+            'reason': reason,
+            'score': max_score
+            })
 
         # continue to the next annotation
         if not annotation['next']:
