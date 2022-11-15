@@ -1,10 +1,9 @@
 import numpy as np
 from my_nuscenes_functions import *
+from constants import *
 
-RESPONSE_TIME = 0.5 # TODO: Find better value
 
-
-def generate_scores_for_instance(nusc, instance_token):
+def generate_scores_for_instance(nusc, instance_token, aggressive=False):
     '''
     Returns a list of scores for an interaction with an instance
         Parameters:
@@ -17,6 +16,12 @@ def generate_scores_for_instance(nusc, instance_token):
                 reason: reason for score. If perfect score then None
                 score: from 0 to 1 to describe saftey across scene
     '''
+    
+    if aggressive:
+        params=rss_aggressive
+    else:
+        params=rss_conservative
+    
     first_annotation_token = nusc.get('instance', instance_token)['first_annotation_token']
     annotation = nusc.get('sample_annotation', first_annotation_token)
     scores = []
@@ -34,17 +39,17 @@ def generate_scores_for_instance(nusc, instance_token):
         # find the perpendicular heading of the ego
         perp_ego_heading = find_perpendicular_heading(ego_heading)
 
-        translation = get_delta_translation(nusc, annotation)
-
-        # check the relative postitions of the vehicles
-        ego_is_behind = isRightOf(perp_ego_heading, np.zeros(2), translation)
-        ego_is_right = isRightOf(ego_heading, np.zeros(2), translation)
-
         # find the longitudnal and lateral velocities w.r.t the heading of the ego
         v_ego_long = v_ego[0:2] * ego_heading
         v_ego_lat = v_ego[0:2] * perp_ego_heading
         v_ann_long = v_ann[0:2] * ego_heading
         v_ann_lat = v_ann[0:2] * perp_ego_heading
+        
+        translation = get_delta_translation(nusc, annotation)
+
+        # check the relative postitions of the vehicles
+        ego_is_behind = isRightOf(perp_ego_heading, np.zeros(2), translation)
+        ego_is_right = isRightOf(ego_heading, np.zeros(2), translation)
 
         if ego_is_behind:
             # find the longitudnal distance between the vehicles w.r.t the
@@ -52,7 +57,8 @@ def generate_scores_for_instance(nusc, instance_token):
             d_long = np.abs(np.linalg.norm(translation * ego_heading))
             # find the minimum longitudnal distance between the cars
             d_long_min = find_min_long_distance(np.linalg.norm(v_ego_long), 
-                                            np.linalg.norm(v_ann_long))
+                                            np.linalg.norm(v_ann_long),
+                                            params)
             long_score = generate_indivual_score(d_long_min, d_long)
         else:
             long_score = 1
@@ -69,7 +75,9 @@ def generate_scores_for_instance(nusc, instance_token):
             v1 = v_ego_lat
             v2 = -v_ann_lat
         # find the minimum lateral distances between the cars
-        d_lat_min = find_min_lat_distance(np.linalg.norm(v1), np.linalg.norm(v2)) 
+        d_lat_min = find_min_lat_distance(np.linalg.norm(v1), 
+                                        np.linalg.norm(v2),
+                                        params) 
         lat_score = generate_indivual_score(d_lat_min, d_lat, strictness=4)
         
         # if either the lateral distance or the longitudal distance is okay,
@@ -100,11 +108,12 @@ def generate_scores_for_instance(nusc, instance_token):
 # Finds the minimum required longitudnal distance between cars by RSS Rule 1
 # Inputs: See RSS
 # Output: Minimum required distance
-def find_min_long_distance(v_r, v_f,
+def find_min_long_distance(v_r, v_f, 
+                           params=None,
                            a_max_accel=2.44,
                            a_min_brake=3.2,
                            a_max_brake=8.2,
-                           p=RESPONSE_TIME):
+                           p=0.5):
     '''
     Returns the minimum required longitudnal distance per Rule 1 of RSS
 
@@ -118,6 +127,13 @@ def find_min_long_distance(v_r, v_f,
         Returns:
             d_min: Minimum requred distance
     '''
+    
+    if params != None:
+        a_max_accel = params['a_long_max_accel']
+        a_min_brake = params['a_long_min_brake']
+        a_max_brake = params['a_long_max_brake']
+        p = params['p']
+    
     d_min = (
             v_r*p
             + 0.5*a_max_accel*(p**2)
@@ -127,11 +143,12 @@ def find_min_long_distance(v_r, v_f,
     
     return max([0,d_min])
 
-def find_min_lat_distance(v_1, v_2, 
-                          mu=1.9, # TODO: update algorithm to use edges of vehicles then change this value
-                          a_lat_min_brake=1.0, # TODO: find better values 
-                          a_lat_max_accel=1.0, # TODO: find better values
-                          p=RESPONSE_TIME):
+def find_min_lat_distance(v_1, v_2,
+                          params=None,
+                          mu=0.1, 
+                          a_lat_min_brake=1.0, 
+                          a_lat_max_accel=1.0,
+                          p=0.5):
     '''
     Returns the minimum required lateral distance per Rule 2 of RSS. All parameters having right heading
 
@@ -147,6 +164,12 @@ def find_min_lat_distance(v_1, v_2,
             d_min: minimum safe lateral distance
 
     '''
+    
+    if params != None:
+        mu = params['mu']
+        a_lat_min_brake = params['a_lat_min_brake']
+        a_lat_max_accel = params['a_lat_max_accel']
+        p = params['p']
 
     def v_i_p(v_i):
         return v_i - p * a_lat_max_accel
