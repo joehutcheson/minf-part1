@@ -88,7 +88,7 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=False):
         if max_score == 1:
             reason = None
         elif max_score == long_score:
-            reason = 'Following too close'
+            reason = 'Longitudnally too close'
         elif max_score == lat_score:
             reason == 'Laterally too close'
         scores.append({
@@ -171,22 +171,20 @@ def find_min_lat_distance(v_1, v_2,
         a_lat_max_accel = params['a_lat_max_accel']
         p = params['p']
 
-    def v_i_p(v_i):
-        return v_i - p * a_lat_max_accel
+    v_1_p = v_1 + p * a_lat_max_accel
+    v_2_p = v_2 - p * a_lat_max_accel
+    
 
     d_min = (
-        mu
-        + (
-            ((v_1 + v_i_p(v_1)) * p) / 2
-            + (v_i_p(v_1)**2) / (2 * a_lat_min_brake)
-            - (
-                ((v_2 + v_i_p(v_2)) * p) / 2
-                - (v_2 + v_i_p(v_2)**2)/(2 * a_lat_min_brake)
+              ((v_1 + v_1_p) * p) / 2
+              + (v_1_p**2) / (2 * a_lat_min_brake)
+              - (
+                ((v_2 + v_2_p) * p) / 2
+                - (v_2_p**2)/(2 * a_lat_min_brake)
+              )
             )
-        )
-    )
 
-    return max([0,d_min])
+    return max([mu, mu + d_min])
 
 
 

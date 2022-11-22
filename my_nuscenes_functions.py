@@ -56,7 +56,7 @@ def get_delta_translation(nusc, annotation):
             nusc: NuScenes object
             annotation: dictionary annotation
         Returns:
-            translation: numpy array in form [x,y,z]
+            translation: numpy array in form [x,y]
     '''
     sample = nusc.get('sample', annotation['sample_token'])
     sample_data_token = sample['data']['RADAR_FRONT']
@@ -77,6 +77,14 @@ def get_delta_translation(nusc, annotation):
     ann_bb = nusc.get_box(annotation['token']).bottom_corners()[0:2]
     ann_bb = np.array(list(zip(ann_bb[0], ann_bb[1])))
     
+    return find_translation(ego_bb, ann_bb)
+    
+
+def find_translation(ego_bb, ann_bb):
+
+    ego_bb = np.array(ego_bb)
+    ann_bb = np.array(ann_bb)
+
     # https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
     def length_between_line_and_point(p, l):
         if math.dist(l[0], l[1]) == 0:
@@ -87,7 +95,7 @@ def get_delta_translation(nusc, annotation):
         return math.dist(p, projection), projection
         
         
-    
+    # find min distance between corners and edges of the boxes
     min_dist, projection = length_between_line_and_point(ego_bb[0], ann_bb[0:2])
     min_trans = projection - ego_bb[0]
     for i in range(4):
@@ -95,18 +103,18 @@ def get_delta_translation(nusc, annotation):
         p2 = ego_bb[(i+1)%4]
         l = np.array([p1,p2])
         for j in range(4):
-            p = ann_bb[i]
+            p = ann_bb[j]
             dist, projection = length_between_line_and_point(p, l)
             if dist < min_dist:
                 min_dist = dist
-                min_trans = projection - p
+                min_trans = p - projection
                 
     for i in range(4):
         p1 = ann_bb[i]
         p2 = ann_bb[(i+1)%4]
         l = np.array([p1,p2])
         for j in range(4):
-            p = ego_bb[i]
+            p = ego_bb[j]
             dist, projection = length_between_line_and_point(p, l)
             if dist < min_dist:
                 min_dist = dist
