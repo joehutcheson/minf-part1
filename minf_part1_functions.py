@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.linalg import norm
 from my_nuscenes_functions import *
 from constants import *
 
@@ -56,12 +57,20 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=False):
             # heaidng of the ego
             d_long = np.abs(np.linalg.norm(translation * ego_heading))
             # find the minimum longitudnal distance between the cars
-            d_long_min = find_min_long_distance(np.linalg.norm(v_ego_long), 
+            if angle_between(v_ego_long, v_ann_long) < np.pi / 2:
+                # cars in same direction
+                d_long_min = find_min_long_distance(np.linalg.norm(v_ego_long), 
                                             np.linalg.norm(v_ann_long),
                                             params)
+            else:
+                # cars in oposite direcitons
+                d_long_min = find_min_lat_distance_oposite_direction(norm(v_ego_long), 
+                                                                    norm(v_ann_long),
+                                                                    params)
             long_score = generate_indivual_score(d_long_min, d_long)
         else:
-            long_score = 1
+            # ego doesn't hold responsibility for vehicle behind
+            long_score = 1 
         
         # find the lateral distance between the vehicles w.r.t the
         # heaidng of the ego
@@ -142,6 +151,24 @@ def find_min_long_distance(v_r, v_f,
     )
     
     return max([0,d_min])
+
+def find_min_lat_distance_oposite_direction(v_1, v_2, params):
+    a_min_brake = params['a_long_min_brake']
+    a_min_brake_corr = params['a_long_min_brake_correct']
+    a_max_accel = params['a_long_max_accel']
+    p = params['p']
+
+    v_1_p = v_1 + p * a_max_accel
+    v_2_p = abs(v_2) + p * a_max_accel
+
+    d_min = (
+        (v_1 + v_1_p) * p / 2
+        + v_1_p ** 2 / 2 * a_min_brake_corr
+        + (abs(v_2) + v_2_p) * p / 2
+        + v_2_p ** 2 / 2 * a_min_brake
+    )
+
+    return d_min
 
 def find_min_lat_distance(v_1, v_2,
                           params=None,
@@ -273,3 +300,12 @@ def isRightOf(v, p1, p2):
         return False
     return None
     
+def angle_between(a, b):
+    a = np.array(a)
+    b = np.array(b)
+    if norm(a) * norm(b) == 0: 
+        return 0 
+    theta = np.arccos(
+        a.dot(b) / (norm(a) * norm(b))
+    )
+    return theta

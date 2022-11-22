@@ -6,7 +6,7 @@ rss_conservative = {
     'a_long_max_brake': 9.50,
     'a_lat_min_brake': 0.86,
     'a_lat_max_accel': 0.45,
-    'a_long_min_brake_corr': 1.86,
+    'a_long_min_brake_correct': 1.86,
     'mu': 0.07
 }
 
@@ -17,7 +17,7 @@ rss_aggressive = {
     'a_long_max_brake': 8.03,
     'a_lat_min_brake': 0.96,
     'a_lat_max_accel': 0.43,
-    'a_long_min_brake_corr': 1.76,
+    'a_long_min_brake_correct': 1.76,
     'mu': 0.07
 }
 
