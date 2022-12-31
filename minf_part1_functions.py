@@ -36,62 +36,64 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=False):
 
         # find the heading of the ego
         ego_heading = find_heading(v_ego)
+        if ego_heading is None:
+            max_score = 1 # ego is stopped
+        else:
+            # find the perpendicular heading of the ego
+            perp_ego_heading = find_perpendicular_heading(ego_heading)
 
-        # find the perpendicular heading of the ego
-        perp_ego_heading = find_perpendicular_heading(ego_heading)
+            # find the longitudnal and lateral velocities w.r.t the heading of the ego
+            v_ego_long = v_ego[0:2] * ego_heading
+            v_ego_lat = v_ego[0:2] * perp_ego_heading
+            v_ann_long = v_ann[0:2] * ego_heading
+            v_ann_lat = v_ann[0:2] * perp_ego_heading
+            
+            translation = get_delta_translation(nusc, annotation)
 
-        # find the longitudnal and lateral velocities w.r.t the heading of the ego
-        v_ego_long = v_ego[0:2] * ego_heading
-        v_ego_lat = v_ego[0:2] * perp_ego_heading
-        v_ann_long = v_ann[0:2] * ego_heading
-        v_ann_lat = v_ann[0:2] * perp_ego_heading
-        
-        translation = get_delta_translation(nusc, annotation)
+            # check the relative postitions of the vehicles
+            ego_is_behind = isRightOf(perp_ego_heading, np.zeros(2), translation)
+            ego_is_right = isRightOf(ego_heading, np.zeros(2), translation)
 
-        # check the relative postitions of the vehicles
-        ego_is_behind = isRightOf(perp_ego_heading, np.zeros(2), translation)
-        ego_is_right = isRightOf(ego_heading, np.zeros(2), translation)
-
-        if ego_is_behind:
-            # find the longitudnal distance between the vehicles w.r.t the
-            # heaidng of the ego
-            d_long = np.abs(np.linalg.norm(translation * ego_heading))
-            # find the minimum longitudnal distance between the cars
-            if angle_between(v_ego_long, v_ann_long) < np.pi / 2:
-                # cars in same direction
-                d_long_min = find_min_long_distance(np.linalg.norm(v_ego_long), 
-                                            np.linalg.norm(v_ann_long),
-                                            params)
+            if ego_is_behind:
+                # find the longitudnal distance between the vehicles w.r.t the
+                # heaidng of the ego
+                d_long = np.abs(norm(translation * ego_heading))
+                # find the minimum longitudnal distance between the cars
+                if angle_between(v_ego_long, v_ann_long) < np.pi / 2:
+                    # cars in same direction
+                    d_long_min = find_min_long_distance(norm(v_ego_long), 
+                                                norm(v_ann_long),
+                                                params)
+                else:
+                    # cars in oposite direcitons
+                    d_long_min = find_min_lat_distance_oposite_direction(norm(v_ego_long), 
+                                                                        norm(v_ann_long),
+                                                                        params)
+                long_score = generate_indivual_score(d_long_min, d_long)
             else:
-                # cars in oposite direcitons
-                d_long_min = find_min_lat_distance_oposite_direction(norm(v_ego_long), 
-                                                                    norm(v_ann_long),
-                                                                    params)
-            long_score = generate_indivual_score(d_long_min, d_long)
-        else:
-            # ego doesn't hold responsibility for vehicle behind
-            long_score = 1 
-        
-        # find the lateral distance between the vehicles w.r.t the
-        # heaidng of the ego
-        d_lat = np.abs(np.linalg.norm(translation * perp_ego_heading))
+                # ego doesn't hold responsibility for vehicle behind
+                long_score = 1 
+            
+            # find the lateral distance between the vehicles w.r.t the
+            # heaidng of the ego
+            d_lat = np.abs(norm(translation * perp_ego_heading))
 
-        # check and assign relative positions of vehicles
-        if ego_is_right:
-            v1 = v_ann_lat
-            v2 = -v_ego_lat
-        else:
-            v1 = v_ego_lat
-            v2 = -v_ann_lat
-        # find the minimum lateral distances between the cars
-        d_lat_min = find_min_lat_distance(np.linalg.norm(v1), 
-                                        np.linalg.norm(v2),
-                                        params) 
-        lat_score = generate_indivual_score(d_lat_min, d_lat, strictness=4)
-        
-        # if either the lateral distance or the longitudal distance is okay,
-        # then we consider the situation safe, hence max of each score is used
-        max_score = max([long_score, lat_score])
+            # check and assign relative positions of vehicles
+            if ego_is_right:
+                v1 = v_ann_lat
+                v2 = -v_ego_lat
+            else:
+                v1 = v_ego_lat
+                v2 = -v_ann_lat
+            # find the minimum lateral distances between the cars
+            d_lat_min = find_min_lat_distance(norm(v1), 
+                                            norm(v2),
+                                            params) 
+            lat_score = generate_indivual_score(d_lat_min, d_lat, strictness=4)
+            
+            # if either the lateral distance or the longitudal distance is okay,
+            # then we consider the situation safe, hence max of each score is used
+            max_score = max([long_score, lat_score])
 
         # note the reason for the score
         if max_score == 1:
@@ -99,7 +101,7 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=False):
         elif max_score == long_score:
             reason = 'Longitudnally too close'
         elif max_score == lat_score:
-            reason == 'Laterally too close'
+            reason = 'Laterally too close'
         scores.append({
             'annotation':annotation['token'], 
             'reason': reason,
@@ -215,7 +217,7 @@ def find_min_lat_distance(v_1, v_2,
 
 
 
-def generate_indivual_score(minimum, actual, strictness=1):
+def generate_indivual_score(minimum, actual, strictness=0.1):
     '''
     Generates a score between 0 and 1 given minimum and actual values
 
@@ -247,9 +249,14 @@ def find_heading(v):
         Returns:
             heading
     '''
+    v = np.array(v)
     v = v[0:2] # ensure 2-dimensional
+    magnitude = norm(v)
 
-    return v / np.linalg.norm(v)
+    if magnitude == 0:
+        return None
+
+    return v / magnitude
 
 def find_perpendicular_heading(heading):
     '''
