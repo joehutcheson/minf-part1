@@ -66,9 +66,9 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=False):
                                                 params)
                 else:
                     # cars in oposite direcitons
-                    d_long_min = find_min_lat_distance_oposite_direction(norm(v_ego_long), 
-                                                                        norm(v_ann_long),
-                                                                        params)
+                    d_long_min = find_min_long_distance_oposite_direction(norm(v_ego_long),
+                                                                          norm(v_ann_long),
+                                                                          params)
                 long_score = generate_indivual_score(d_long_min, d_long)
             else:
                 # ego doesn't hold responsibility for vehicle behind
@@ -78,16 +78,23 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=False):
             # heaidng of the ego
             d_lat = np.abs(norm(translation * perp_ego_heading))
 
+            # find angle from the x-axis of the perpendicular heading
+            d_lat_theta = np.arctan2(perp_ego_heading[0], perp_ego_heading[1])
+
+            # rotate the lateral velocities to the x-axis
+            v_ego_lat_single_value = rotation(d_lat_theta, v_ego_lat)[0]
+            v_ann_lat_single_value = rotation(d_lat_theta, v_ann_lat)[0]
+
             # check and assign relative positions of vehicles
             if ego_is_right:
-                v1 = v_ann_lat
-                v2 = -v_ego_lat
+                v1 = v_ann_lat_single_value
+                v2 = v_ego_lat_single_value
             else:
-                v1 = v_ego_lat
-                v2 = -v_ann_lat
+                v1 = v_ego_lat_single_value
+                v2 = v_ann_lat_single_value
             # find the minimum lateral distances between the cars
-            d_lat_min = find_min_lat_distance(norm(v1), 
-                                            norm(v2),
+            d_lat_min = find_min_lat_distance(v1,
+                                            v2,
                                             params) 
             lat_score = generate_indivual_score(d_lat_min, d_lat, strictness=4)
             
@@ -154,7 +161,7 @@ def find_min_long_distance(v_r, v_f,
     
     return max([0,d_min])
 
-def find_min_lat_distance_oposite_direction(v_1, v_2, params):
+def find_min_long_distance_oposite_direction(v_1, v_2, params):
     a_min_brake = params['a_long_min_brake']
     a_min_brake_corr = params['a_long_min_brake_correct']
     a_max_accel = params['a_long_max_accel']
@@ -270,6 +277,12 @@ def find_perpendicular_heading(heading):
     '''
     return np.array([heading[1], -heading[0]])
 
+def rotation(a, p):
+    a = np.array(a)
+    p = np.array(p)
+    R = np.array([[np.cos(a),-np.sin(a)],[np.sin(a), np.cos(a)]])
+    return R.dot(p)
+
 
 def isRightOf(v, p1, p2):
     '''
@@ -291,11 +304,8 @@ def isRightOf(v, p1, p2):
     p2 = p2[0:2]
 
     # calculate anti clockwise angle of heading from y axis
+    # TODO is this the y-axis?? or is it the x-axis? It might not matter...
     theta = np.arctan2(v[0], v[1])
-
-    def rotation(a, p):
-        R = np.array([[np.cos(a),-np.sin(a)],[np.sin(a), np.cos(a)]])
-        return R.dot(p)
 
     p1 = rotation(theta, p1)
     p2 = rotation(theta, p2)
