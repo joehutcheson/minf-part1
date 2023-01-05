@@ -21,7 +21,7 @@ rss_aggressive = {
     'mu': 0.07
 }
 
-## Renault Zoe dimensions from https://en.wikipedia.org/wiki/Renault_Zoe
+# Renault Zoe dimensions from https://en.wikipedia.org/wiki/Renault_Zoe
 renault_zoe_dims = {
     'length': 4.084,
     'width': 1.730
