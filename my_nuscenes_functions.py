@@ -1,7 +1,7 @@
 import numpy as np
 import math
-from scipy.spatial.transform import Rotation as R
 from constants import *
+from scipy.spatial.transform import Rotation
 
 def get_ego_velocity(nusc, sample_token):
     '''
@@ -66,11 +66,22 @@ def get_delta_translation(nusc, annotation):
     
     w = renault_zoe_dims['width']
     l = renault_zoe_dims['length']
+
+    r = ego_pose['rotation']
+    r = [r[1], r[2], r[3], r[0]]  # convert to scalar last as required by SciPy
+    r = Rotation.from_quat(r)
+    angle = r.as_euler('xyz')[2]  # lowercase xyz for extrinsic, take the rotation around z axis
+
+    front_right = rotation(angle, np.array([0,-w/2]))
+    front_left = rotation(angle, np.array([0, w/2]))
+    back_left = rotation(angle, np.array([-l,w/2]))
+    back_right = rotation(angle, np.array([-l,-w/2]))
     
-    ego_bb = [ego_trans + np.array([0,w/2]), # front-left
-              ego_trans + np.array([-l,w/2]), # back-left
-              ego_trans + np.array([-l,-w/2]), # back-right
-              ego_trans + np.array([0,-w/2])] # front-right
+    ego_bb = [ego_trans + front_right,  # front-right
+              ego_trans + front_left,  # front-left
+              ego_trans + back_left,  # back-left
+              ego_trans + back_right]  # back-right
+
     ego_bb = np.array(ego_bb)
               
     
@@ -121,3 +132,18 @@ def find_translation(ego_bb, ann_bb):
                 min_trans = projection - p
             
     return min_trans
+
+def rotation(a, p):
+    """
+    Rotates the 2-dimensional input vector clockwise by the input value
+    Args:
+        a: rotation angle
+        p: input vector
+
+    Returns:
+
+    """
+    a = np.array(a)
+    p = np.array(p)
+    matrix = np.array([[np.cos(a), -np.sin(a)], [np.sin(a), np.cos(a)]])
+    return matrix.dot(p)

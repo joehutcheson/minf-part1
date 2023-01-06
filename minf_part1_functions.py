@@ -281,11 +281,7 @@ def find_perpendicular_heading(heading):
     return np.array([heading[1], -heading[0]])
 
 
-def rotation(a, p):
-    a = np.array(a)
-    p = np.array(p)
-    matrix = np.array([[np.cos(a), -np.sin(a)], [np.sin(a), np.cos(a)]])
-    return matrix.dot(p)
+
 
 
 def is_right_of(v, p1, p2):
