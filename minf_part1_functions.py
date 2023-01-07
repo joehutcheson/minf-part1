@@ -29,89 +29,95 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=False):
     while next_annotation:
         # TODO: Make sure the longitudinal velocity is in relation to the road not the ego heading
 
-        # find velocities of ego and annotated vehicle
-        v_ann = nusc.box_velocity(annotation['token'])
-        v_ego = get_ego_velocity(nusc, annotation['sample_token'])
+        # check vehicle is not parked
+        if not any([nusc.get('attribute', t)['name'] == 'vehicle.parked' for t in annotation['attribute_tokens']]):
 
-        # find the heading of the ego
-        ego_heading = find_heading(v_ego)
-        if ego_heading is None:
-            max_score = 1  # ego is stopped
-        else:
-            # find the perpendicular heading of the ego
-            perp_ego_heading = find_perpendicular_heading(ego_heading)
+            # find velocities of ego and annotated vehicle
+            v_ann = nusc.box_velocity(annotation['token'])
+            v_ego = get_ego_velocity(nusc, annotation['sample_token'])
 
-            # find the longitudinal and lateral velocities w.r.t the heading of the ego
-            v_ego_long = v_ego[0:2] * ego_heading
-            v_ego_lat = v_ego[0:2] * perp_ego_heading
-            v_ann_long = v_ann[0:2] * ego_heading
-            v_ann_lat = v_ann[0:2] * perp_ego_heading
+            # find the heading of the ego
+            ego_heading = find_heading(v_ego)
+            if ego_heading is None:
+                max_score = 1  # ego is stopped
+            else:
+                # find the perpendicular heading of the ego
+                perp_ego_heading = find_perpendicular_heading(ego_heading)
 
-            translation = get_delta_translation(nusc, annotation)
+                # find the longitudinal and lateral velocities w.r.t the heading of the ego
+                v_ego_long = v_ego[0:2] * ego_heading
+                v_ego_lat = v_ego[0:2] * perp_ego_heading
+                v_ann_long = v_ann[0:2] * ego_heading
+                v_ann_lat = v_ann[0:2] * perp_ego_heading
 
-            # check the relative positions of the vehicles
-            ego_is_behind = is_right_of(perp_ego_heading, np.zeros(2), translation)
-            ego_is_right = is_right_of(ego_heading, np.zeros(2), translation)
+                translation = get_delta_translation(nusc, annotation)
 
-            if ego_is_behind:
-                # find the longitudinal distance between the vehicles w.r.t the
-                # heading of the ego
-                d_long = np.abs(norm(translation * ego_heading))
-                # find the minimum longitudinal distance between the cars
-                if angle_between(v_ego_long, v_ann_long) < np.pi / 2:
-                    # cars in same direction
-                    d_long_min = find_min_long_distance(norm(v_ego_long),
-                                                        norm(v_ann_long),
-                                                        params)
+                # check the relative positions of the vehicles
+                ego_is_behind = is_right_of(perp_ego_heading, np.zeros(2), translation)
+                ego_is_right = is_right_of(ego_heading, np.zeros(2), translation)
+
+                if ego_is_behind:
+                    # find the longitudinal distance between the vehicles w.r.t the
+                    # heading of the ego
+                    d_long = np.abs(norm(translation * ego_heading))
+                    # find the minimum longitudinal distance between the cars
+                    if angle_between(v_ego_long, v_ann_long) < np.pi / 2:
+                        # cars in same direction
+                        d_long_min = find_min_long_distance(norm(v_ego_long),
+                                                            norm(v_ann_long),
+                                                            params)
+                    else:
+                        # cars in opposite directions
+                        d_long_min = find_min_long_distance_opposite_direction(norm(v_ego_long),
+                                                                               norm(v_ann_long),
+                                                                               params)
+                    long_score = generate_individual_score(d_long_min, d_long)
                 else:
-                    # cars in opposite directions
-                    d_long_min = find_min_long_distance_opposite_direction(norm(v_ego_long),
-                                                                           norm(v_ann_long),
-                                                                           params)
-                long_score = generate_individual_score(d_long_min, d_long)
-            else:
-                # ego doesn't hold responsibility for vehicle behind
-                long_score = 1
+                    # ego doesn't hold responsibility for vehicle behind
+                    long_score = 1
 
-            # find the lateral distance between the vehicles w.r.t the heading of the ego
-            d_lat = np.abs(norm(translation * perp_ego_heading))
+                # find the lateral distance between the vehicles w.r.t the heading of the ego
+                d_lat = np.abs(norm(translation * perp_ego_heading))
 
-            # find angle from the x-axis of the perpendicular heading
-            d_lat_theta = np.arctan2(perp_ego_heading[0], perp_ego_heading[1])
+                # Find angle from the x-axis of the perpendicular heading.
+                # This angle is used to find a single value for the lateral velocity.
+                d_lat_theta = np.arctan2(perp_ego_heading[0], perp_ego_heading[1])
 
-            # rotate the lateral velocities to the x-axis
-            v_ego_lat_single_value = rotation(d_lat_theta, v_ego_lat)[0]
-            v_ann_lat_single_value = rotation(d_lat_theta, v_ann_lat)[0]
+                # rotate the lateral velocities to the x-axis
+                v_ego_lat_single_value = rotation(d_lat_theta, v_ego_lat)[0]
+                v_ann_lat_single_value = rotation(d_lat_theta, v_ann_lat)[0]
 
-            # check and assign relative positions of vehicles
-            if ego_is_right:
-                v1 = v_ann_lat_single_value
-                v2 = v_ego_lat_single_value
-            else:
-                v1 = v_ego_lat_single_value
-                v2 = v_ann_lat_single_value
-            # find the minimum lateral distances between the cars
-            d_lat_min = find_min_lat_distance(v1,
-                                              v2,
-                                              params)
-            lat_score = generate_individual_score(d_lat_min, d_lat, strictness=4)
+                # Assign velocities to input variables for RSS rule 2.
+                # c1 is on the left, c2 is on the right, with velocities v1 and v2 respectively
+                if ego_is_right:
+                    v1 = v_ann_lat_single_value
+                    v2 = v_ego_lat_single_value
+                else:
+                    v1 = v_ego_lat_single_value
+                    v2 = v_ann_lat_single_value
 
-            # if either the lateral distance or the longitudinal distance is okay,
-            # then we consider the situation safe, hence max of each score is used
-            max_score = max([long_score, lat_score])
+                # find the minimum lateral distances between the cars
+                d_lat_min = find_min_lat_distance(v1,
+                                                  v2,
+                                                  params)
+                lat_score = generate_individual_score(d_lat_min, d_lat, strictness=1)
 
-        # note the reason for the score
-        if max_score == 1:
-            reason = None
-        elif max_score == long_score:
-            reason = 'Longitudinally too close'
-        elif max_score == lat_score:
-            reason = 'Laterally too close'
-        scores.append({
-            'annotation': annotation['token'],
-            'reason': reason,
-            'score': max_score
-        })
+                # if either the lateral distance or the longitudinal distance is okay,
+                # then we consider the situation safe, hence max of each score is used
+                max_score = max([long_score, lat_score])
+
+            # note the reason for the score
+            if max_score == 1:
+                reason = None
+            elif max_score == long_score:
+                reason = 'Longitudinally too close'
+            elif max_score == lat_score:
+                reason = 'Laterally too close'
+            scores.append({
+                'annotation': annotation['token'],
+                'reason': reason,
+                'score': max_score
+            })
 
         # continue to the next annotation
         if not annotation['next']:
@@ -225,7 +231,7 @@ def find_min_lat_distance(v_1, v_2,
     return max([mu, mu + d_min])
 
 
-def generate_individual_score(minimum, actual, strictness=0.1):
+def generate_individual_score(minimum, actual, strictness=0.2):
     """
     Generates a score between 0 and 1 given minimum and actual values
 
