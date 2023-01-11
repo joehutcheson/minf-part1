@@ -11,8 +11,8 @@
 
     {% for scene in nusc.scene %}
         <tr>
-            <td>scene['name']</td>
-            <td>scene['description']</td>
+            <td>{{scene['name']}}</td>
+            <td>{{scene['description']}}</td>
             <td><a href="{{ url_for('scene', token=scene['token']) }}">select</a></td>
         </tr>
     {% endfor %}

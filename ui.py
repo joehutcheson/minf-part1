@@ -1,5 +1,6 @@
 import webbrowser
 import os
+import shutil
 from threading import Timer
 from flask import Flask, render_template
 import webbrowser
@@ -25,15 +26,21 @@ def start_browser():
 def index():
     return render_template('index.html', nusc=nusc)
 
-@app.route('/scene/<str:token>')
+@app.route('/scene/<string:token>')
 def scene(token):
-    return render_template('scene.html', nusc=nusc, token=token)
+    scores = [score for score in generate_scores_for_scene(nusc, token) if score['score'] < 1]
+
+    return render_template('scene.html', nusc=nusc, token=token, scores=scores)
 
 def main():
-
+    temp_render_dir = 'static/temp_renders'
+    if os.path.exists(temp_render_dir):
+        shutil.rmtree(temp_render_dir)
+    os.makedirs(temp_render_dir)
 
     Timer(1, start_browser).start()
     app.run(host=HOST, port=PORT, debug=True)
+
 
 if __name__ == '__main__':
     main()

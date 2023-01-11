@@ -3,6 +3,42 @@ from my_nuscenes_functions import *
 from constants import *
 
 
+def generate_scores_for_scene(nusc, scene_token):
+    scores = []
+
+    scene = nusc.get('scene', scene_token)
+
+    sample = nusc.get('sample', scene['first_sample_token'])
+
+    def get_score(score_dict):
+        return score_dict['score']
+
+    instances = set()
+
+    done = False
+    # loop through all samples in scenes
+    while not done:
+        # loop through all annotations in sample
+        for ann in sample['anns']:
+            instance_token = nusc.get('sample_annotation', ann)['instance_token']
+            instance = nusc.get('instance', instance_token)
+            category = nusc.get('category', instance['category_token'])['name']
+            if instance_token not in instances and 'vehicle' in category:
+                s = generate_scores_for_instance(nusc, instance_token, aggressive=True)
+                if s:
+                    s = min(s, key=get_score)
+                    s['instance'] = instance_token
+                    scores.append(s)
+                    instances.add(instance_token)
+
+        # check for next sample
+        if sample['next']:
+            sample = nusc.get('sample', sample['next'])
+        else:
+            done = True
+
+    return scores
+
 def generate_scores_for_instance(nusc, instance_token, aggressive=False):
     """
     Returns a list of scores for an interaction with an instance
