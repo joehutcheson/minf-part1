@@ -13,8 +13,8 @@ app = Flask(__name__)
 HOST = '127.0.0.1'
 PORT = 8080
 
-dataroot = 'data/sets/nuscenes'
-# dataroot = '/Volumes/kingston/v1.0-mini'
+# dataroot = 'data/sets/nuscenes'
+dataroot = '/Volumes/kingston/v1.0-mini'
 # nusc = NuScenes(version='v1.0-trainval', dataroot=dataroot, verbose=True)
 nusc = NuScenes(version='v1.0-mini', dataroot=dataroot, verbose=False)
 
@@ -29,6 +29,11 @@ def index():
 @app.route('/scene/<string:token>')
 def scene(token):
     scores = [score for score in generate_scores_for_scene(nusc, token) if score['score'] < 1]
+
+    print(os.getcwd())
+
+    for score in scores:
+        nusc.render_annotation(score['annotation'], out_path='static/temp_renders/' + score['annotation'] + '.jpg')
 
     return render_template('scene.html', nusc=nusc, token=token, scores=scores)
 

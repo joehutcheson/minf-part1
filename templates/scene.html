@@ -1,5 +1,7 @@
 {% extends 'base.html' %} {% block content %}
 
-{{ scores }}
+{% for score in scores %}
+    <img src="{{ url_for('static', filename='temp_renders/' + score['annotation'] + '.jpg') }}">
+{% endfor %}
 
 {% endblock content %}
