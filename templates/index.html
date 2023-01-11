@@ -1,0 +1,22 @@
+{% extends 'base.html' %} {% block content %}
+<h1>{% block title %}Joe Hutcheson - MInf Project{% endblock title %}</h1>
+
+<h2>Select scene:</h2>
+<table>
+    <tr>
+        <th>Name</th>
+    <th>Description</th>
+    <th>Select</th>
+    </tr>
+
+    {% for scene in nusc.scene %}
+        <tr>
+            <td>scene['name']</td>
+            <td>scene['description']</td>
+            <td><a href="{{ url_for('scene', token=scene['token']) }}">select</a></td>
+        </tr>
+    {% endfor %}
+
+</table>
+
+{% endblock content %}
