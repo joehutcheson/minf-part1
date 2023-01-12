@@ -39,7 +39,7 @@ def generate_scores_for_scene(nusc, scene_token):
 
     return scores
 
-def generate_scores_for_instance(nusc, instance_token, aggressive=False):
+def generate_scores_for_instance(nusc, instance_token, aggressive=True):
     """
     Returns a list of scores for an interaction with an instance
         Parameters:

@@ -1,7 +1,18 @@
 {% extends 'base.html' %} {% block content %}
 
-{% for score in scores %}
-    <img src="{{ url_for('static', filename='temp_renders/' + score['annotation'] + '.jpg') }}">
-{% endfor %}
+<table>
+    {% for score in scores %}
+    <tr>
+        <td>
+            <p><b>Score:</b> {{ score['score'] }}</p>
+            <p><b>Reason:</b> {{ score['reason'] }}</p>
+            <p><b>Annotation:</b> {{ score['annotation'] }}</p>
+            <p><b>Instance:</b> {{ score['instance'] }}</p>
+        </td>
+        <td><img src="{{ url_for('static', filename='temp_renders/' + score['annotation'] + '.jpg') }}" style="width: 50em"></td>
+    </tr>
+    {% endfor %}
+</table>
+
 
 {% endblock content %}
