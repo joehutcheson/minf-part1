@@ -5,13 +5,15 @@
 <table>
     <tr>
         <th>Name</th>
-    <th>Description</th>
-    <th>Select</th>
+        <th>Location</th>
+        <th>Description</th>
+        <th>Select</th>
     </tr>
 
     {% for scene in nusc.scene %}
         <tr>
             <td>{{scene['name']}}</td>
+            <td>{{ nusc.get('log', scene['log_token'])['location'] }}</td>
             <td>{{scene['description']}}</td>
             <td><a href="{{ url_for('scene', token=scene['token']) }}">select</a></td>
         </tr>
