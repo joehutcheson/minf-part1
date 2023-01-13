@@ -105,7 +105,7 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
                     else:
                         # cars in opposite directions
                         d_long_min = find_min_long_distance_opposite_direction(norm(v_ego_long),
-                                                                               norm(v_ann_long),
+                                                                               -norm(v_ann_long),
                                                                                params)
                     long_score = generate_individual_score(d_long_min, d_long)
                 else:
@@ -215,9 +215,9 @@ def find_min_long_distance_opposite_direction(v_1, v_2, params):
 
     d_min = (
             (v_1 + v_1_p) * p / 2
-            + v_1_p ** 2 / 2 * a_min_brake_corr
+            + (v_1_p ** 2) / (2 * a_min_brake_corr)
             + (abs(v_2) + v_2_p) * p / 2
-            + v_2_p ** 2 / 2 * a_min_brake
+            + (v_2_p ** 2) / (2 * a_min_brake)
     )
 
     return d_min
