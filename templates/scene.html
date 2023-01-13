@@ -1,6 +1,10 @@
 {% extends 'base.html' %} {% block content %}
 
 <table>
+    {% if scores == [] %}
+    <p><b>No dangerous situations found</b></p>
+    {% endif %}
+
     {% for score in scores %}
     <tr>
         <td>
