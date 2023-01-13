@@ -308,7 +308,8 @@ def find_heading(v):
     v = v[0:2]  # ensure 2-dimensional
     magnitude = norm(v)
 
-    if magnitude == 0:
+    # Heading is unreliable when magitude is very small
+    if magnitude <= 0.05:
         return None
 
     return v / magnitude
