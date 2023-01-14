@@ -247,7 +247,7 @@ def find_min_lat_distance(v_1, v_2,
     """
 
     # if the cars are moving apart then situation is not dangerous
-    if v_1 < 0 < v_2:
+    if v_1 < 0 or v_2 > 0:
         return mu
 
     if params is not None:
