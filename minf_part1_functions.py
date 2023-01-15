@@ -69,78 +69,68 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
         if not any([nusc.get('attribute', t)['name'] == 'vehicle.parked' for t in annotation['attribute_tokens']]):
 
             # find velocities of ego and annotated vehicle
-            v_ann = nusc.box_velocity(annotation['token'])
             v_ego = get_ego_velocity(nusc, annotation['sample_token'])
+            v_ann = nusc.box_velocity(annotation['token'])
 
-            # find the heading of the ego
-            ego_heading = find_heading(v_ego)
-            if ego_heading is None:
-                max_score = 1  # ego is stopped
+            # find the longitudinal and lateral velocities w.r.t the heading of the ego
+            heading_angle = get_car_heading(nusc, annotation['sample_token'])
+            heading_vector = angle_to_vector(heading_angle)
+
+            v_ego_aligned = rotation(-heading_angle, v_ego)
+            v_ann_aligned = rotation(-heading_angle, v_ann)
+
+            v_ego_long = rotation(heading_angle, [0,v_ego_aligned[1]])
+            v_ego_lat = rotation(heading_angle, [v_ego_aligned[0],0])
+            v_ann_long = rotation(heading_angle, [0,v_ann_aligned[1]])
+            v_ann_lat = rotation(heading_angle, [v_ann_aligned[0],0])
+
+            translation = get_delta_translation(nusc, annotation)
+
+            # check the relative positions of the vehicles
+            ego_is_behind = is_right_of(find_perpendicular_heading(heading_vector), np.zeros(2), translation)
+            ego_is_right = is_right_of(heading_vector, np.zeros(2), translation)
+
+            if ego_is_behind:
+                # find the longitudinal distance between the vehicles w.r.t the
+                # heading of the ego
+                d_long = np.abs(rotation(-heading_angle, translation)[1])
+                # find the minimum longitudinal distance between the cars
+                if v_ann_aligned[1] >= 0:
+                    # cars travelling in same direction
+                    d_long_min = find_min_long_distance(norm(v_ego_long),
+                                                        norm(v_ann_long),
+                                                        params)
+                else:
+                    # cars travelling in opposite directions
+                    d_long_min = find_min_long_distance_opposite_direction(norm(v_ego_long),
+                                                                           -norm(v_ann_long),
+                                                                           params)
+                long_score = generate_individual_score(d_long_min, d_long)
             else:
-                # find the perpendicular heading of the ego
-                perp_ego_heading = find_perpendicular_heading(ego_heading)
+                # ego doesn't hold responsibility for vehicle behind
+                long_score = 1
 
-                # find the longitudinal and lateral velocities w.r.t the heading of the ego
-                v_ego_long = v_ego[0:2] * ego_heading
-                v_ego_lat = v_ego[0:2] * perp_ego_heading
-                v_ann_long = v_ann[0:2] * ego_heading
-                v_ann_lat = v_ann[0:2] * perp_ego_heading
+            # find the lateral distance between the vehicles w.r.t the heading of the ego
+            d_lat = np.abs(rotation(-heading_angle, translation)[0])
 
-                translation = get_delta_translation(nusc, annotation)
+            # Assign velocities to input variables for RSS rule 2.
+            # c1 is on the left, c2 is on the right, with velocities v1 and v2 respectively
+            if ego_is_right:
+                v1 = v_ann_aligned[0]
+                v2 = v_ego_aligned[0]
+            else:
+                v1 = v_ego_aligned[0]
+                v2 = v_ann_aligned[0]
 
-                # check the relative positions of the vehicles
-                ego_is_behind = is_right_of(perp_ego_heading, np.zeros(2), translation)
-                ego_is_right = is_right_of(ego_heading, np.zeros(2), translation)
+            # find the minimum lateral distances between the cars
+            d_lat_min = find_min_lat_distance(v1,
+                                              v2,
+                                              params)
+            lat_score = generate_individual_score(d_lat_min, d_lat, strictness=1)
 
-                if ego_is_behind:
-                    # find the longitudinal distance between the vehicles w.r.t the
-                    # heading of the ego
-                    d_long = np.abs(norm(translation * ego_heading))
-                    # find the minimum longitudinal distance between the cars
-                    if angle_between(v_ego_long, v_ann_long) < np.pi / 2:
-                        # cars in same direction
-                        d_long_min = find_min_long_distance(norm(v_ego_long),
-                                                            norm(v_ann_long),
-                                                            params)
-                    else:
-                        # cars in opposite directions
-                        d_long_min = find_min_long_distance_opposite_direction(norm(v_ego_long),
-                                                                               -norm(v_ann_long),
-                                                                               params)
-                    long_score = generate_individual_score(d_long_min, d_long)
-                else:
-                    # ego doesn't hold responsibility for vehicle behind
-                    long_score = 1
-
-                # find the lateral distance between the vehicles w.r.t the heading of the ego
-                d_lat = np.abs(norm(translation * perp_ego_heading))
-
-                # Find angle from the x-axis of the perpendicular heading.
-                # This angle is used to find a single value for the lateral velocity.
-                d_lat_theta = np.arctan2(perp_ego_heading[0], perp_ego_heading[1])
-
-                # rotate the lateral velocities to the x-axis
-                v_ego_lat_single_value = rotation(d_lat_theta, v_ego_lat)[0]
-                v_ann_lat_single_value = rotation(d_lat_theta, v_ann_lat)[0]
-
-                # Assign velocities to input variables for RSS rule 2.
-                # c1 is on the left, c2 is on the right, with velocities v1 and v2 respectively
-                if ego_is_right:
-                    v1 = v_ann_lat_single_value
-                    v2 = v_ego_lat_single_value
-                else:
-                    v1 = v_ego_lat_single_value
-                    v2 = v_ann_lat_single_value
-
-                # find the minimum lateral distances between the cars
-                d_lat_min = find_min_lat_distance(v1,
-                                                  v2,
-                                                  params)
-                lat_score = generate_individual_score(d_lat_min, d_lat, strictness=1)
-
-                # if either the lateral distance or the longitudinal distance is okay,
-                # then we consider the situation safe, hence max of each score is used
-                max_score = max([long_score, lat_score])
+            # if either the lateral distance or the longitudinal distance is okay,
+            # then we consider the situation safe, hence max of each score is used
+            max_score = max([long_score, lat_score])
 
             # note the reason for the score
             if max_score == 1:
@@ -149,6 +139,8 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
                 reason = 'Longitudinally too close'
             elif max_score == lat_score:
                 reason = 'Laterally too close'
+            else:
+                reason = 'Unknown'
             scores.append({
                 'annotation': annotation['token'],
                 'reason': reason,
@@ -246,15 +238,15 @@ def find_min_lat_distance(v_1, v_2,
 
     """
 
-    # if the cars are moving apart then situation is not dangerous
-    if v_1 < 0 or v_2 > 0:
-        return mu
-
     if params is not None:
         mu = params['mu']
         a_lat_min_brake = params['a_lat_min_brake']
         a_lat_max_accel = params['a_lat_max_accel']
         p = params['p']
+
+    # if the cars are moving apart then situation is not dangerous
+    if v_1 < 0 or v_2 > 0:
+        return mu
 
     v_1_p = v_1 + p * a_lat_max_accel
     v_2_p = v_2 - p * a_lat_max_accel
@@ -349,8 +341,7 @@ def is_right_of(v, p1, p2):
     p1 = p1[0:2]
     p2 = p2[0:2]
 
-    # calculate anti clockwise angle of heading from y axis
-    # TODO is this the y-axis?? or is it the x-axis? It might not matter...
+    # calculate clockwise angle of heading from y-axis
     theta = np.arctan2(v[0], v[1])
 
     p1 = rotation(theta, p1)
@@ -373,3 +364,8 @@ def angle_between(a, b):
         a.dot(b) / (norm(a) * norm(b))
     )
     return theta
+
+def angle_to_vector(a):
+    x = -np.sin(a)
+    y = np.cos(a)
+    return np.array([x,y])

@@ -1,7 +1,7 @@
 from unittest import TestCase
 import numpy as np
 
-from my_nuscenes_functions import find_translation
+from my_nuscenes_functions import find_translation, rotation
 
 class Test_Find_Translation(TestCase):
     def test_1(self):
@@ -51,3 +51,11 @@ class Test_Find_Translation(TestCase):
             actual = find_translation(ego_bb, ann_bb)
             np.testing.assert_allclose(expected, actual)
             ann_bb = np.roll(ann_bb, 1, axis=0)
+
+class Test_Rotation(TestCase):
+    def test_90_degree_1(self):
+        angle = np.pi/2
+        vector = [0,1]
+        expected = np.array([-1, 0])
+        actual = rotation(angle, vector)
+        np.testing.assert_allclose(expected, actual, atol=0.00001)

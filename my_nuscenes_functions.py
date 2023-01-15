@@ -135,7 +135,7 @@ def find_translation(ego_bb, ann_bb):
 
 def rotation(a, p):
     """
-    Rotates the 2-dimensional input vector clockwise by the input value
+    Rotates the 2-dimensional input vector anti-clockwise by the input value
     Args:
         a: rotation angle
         p: input vector
@@ -143,7 +143,17 @@ def rotation(a, p):
     Returns:
 
     """
-    a = np.array(a)
-    p = np.array(p)
+    p = np.array(p)[0:2]
     matrix = np.array([[np.cos(a), -np.sin(a)], [np.sin(a), np.cos(a)]])
     return matrix.dot(p)
+
+def get_car_heading(nusc, sample_token):
+    sample = nusc.get('sample', sample_token)
+    sample_data = nusc.get('sample_data', sample['data']['RADAR_FRONT'])
+    ego_pose = nusc.get('ego_pose', sample_data['ego_pose_token'])
+    r = ego_pose['rotation']
+    r = [r[1], r[2], r[3], r[0]] # convert to scalar last
+    r = Rotation.from_quat(r)
+    r = r.as_euler('xyz')[2] - (np.pi/2) # convert to from y-axis
+    r = r % (2*np.pi)
+    return r
