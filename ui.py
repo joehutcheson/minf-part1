@@ -4,11 +4,9 @@ import sys
 import shutil
 from threading import Timer
 from flask import Flask, render_template
-import webbrowser
 
 from nuscenes.nuscenes import NuScenes
 from minf_part1_functions import *
-from my_nuscenes_functions import *
 
 app = Flask(__name__)
 HOST = '127.0.0.1' # only visible to local machine
