@@ -1,5 +1,6 @@
 import webbrowser
 import os
+import sys
 import shutil
 from threading import Timer
 from flask import Flask, render_template
@@ -10,13 +11,12 @@ from minf_part1_functions import *
 from my_nuscenes_functions import *
 
 app = Flask(__name__)
-HOST = '127.0.0.1'
+HOST = '127.0.0.1' # only visible to local machine
 PORT = 8080
 
-# dataroot = 'data/sets/nuscenes'
-dataroot = '/Volumes/kingston/v1.0-mini'
-# nusc = NuScenes(version='v1.0-trainval', dataroot=dataroot, verbose=True)
-nusc = NuScenes(version='v1.0-mini', dataroot=dataroot, verbose=False)
+dataroot = sys.argv[1]
+version = sys.argv[2]
+nusc = NuScenes(version=version, dataroot=dataroot, verbose=False)
 
 def start_browser():
     if not os.environ.get("WERKZEUG_RUN_MAIN"):
