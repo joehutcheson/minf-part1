@@ -1,3 +1,4 @@
+python==3.9.15
 nuscenes-devkit==1.1.9
 flask==2.2.2
 tqdm==4.64.1
