@@ -66,7 +66,9 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
         # TODO: Make sure the longitudinal velocity is in relation to the road not the ego heading
 
         # check vehicle is not parked
-        if not any([nusc.get('attribute', t)['name'] == 'vehicle.parked' for t in annotation['attribute_tokens']]):
+        if not any([nusc.get('attribute', t)['name'] == 'vehicle.parked'
+                    or nusc.get('attribute', t)['name'] == 'cycle.without_rider'
+                    for t in annotation['attribute_tokens']]):
 
             # find velocities of ego and annotated vehicle
             v_ego = get_ego_velocity(nusc, annotation['sample_token'])
