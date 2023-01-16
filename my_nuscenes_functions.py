@@ -72,10 +72,14 @@ def get_delta_translation(nusc, annotation):
     r = Rotation.from_quat(r)
     angle = r.as_euler('xyz')[2]  # lowercase xyz for extrinsic, take the rotation around z axis
 
-    front_right = rotation(angle, np.array([0,-w/2]))
-    front_left = rotation(angle, np.array([0, w/2]))
-    back_left = rotation(angle, np.array([-l,w/2]))
-    back_right = rotation(angle, np.array([-l,-w/2]))
+    # find offset to front of car
+    calibrated_sensor = nusc.get('calibrated_sensor', sample_data['calibrated_sensor_token'])
+    offset = calibrated_sensor['translation'][0]
+
+    front_right = rotation(angle, np.array([offset,-w/2]))
+    front_left = rotation(angle, np.array([offset, w/2]))
+    back_left = rotation(angle, np.array([offset-l,w/2]))
+    back_right = rotation(angle, np.array([offset-l,-w/2]))
     
     ego_bb = [ego_trans + front_right,  # front-right
               ego_trans + front_left,  # front-left
