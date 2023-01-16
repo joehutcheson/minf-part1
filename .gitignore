@@ -130,3 +130,6 @@ dmypy.json
 
 # datasets
 data/
+
+# temporary renders
+static/temp_renders/*
