@@ -1,23 +1,8 @@
 from unittest import TestCase
 import numpy as np
 
-from minf_part1_functions import find_heading, find_perpendicular_heading, is_right_of
+from minf_part1_functions import find_perpendicular_heading, is_right_of
 
-class Test_Find_Heading(TestCase):
-    def test_0_degrees(self):
-        v = [42,0]
-        expected = [1,0]
-        actual = find_heading(v)
-
-        np.testing.assert_array_equal(expected, actual)
-
-    def test_random_values(self):
-        for i in range(100):
-            v = np.random.rand(2)
-            expected = v / np.linalg.norm(v)
-            actual = find_heading(v)
-
-            np.testing.assert_array_equal(expected, actual)
 
 class Test_Find_Perpendicular_Heading(TestCase):
     def test_0_degrees(self):

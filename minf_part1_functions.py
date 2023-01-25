@@ -288,27 +288,6 @@ def generate_individual_score(minimum, actual, strictness=0.2):
     return min(1, score)  # score cannot be greater than 1
 
 
-def find_heading(v):
-    """
-    Find the unit vector as a heading of the input vector
-
-        Parameters:
-            v: input vector
-
-        Returns:
-            heading
-    """
-    v = np.array(v)
-    v = v[0:2]  # ensure 2-dimensional
-    magnitude = norm(v)
-
-    # Heading is unreliable when magitude is very small
-    if magnitude <= 0.05:
-        return None
-
-    return v / magnitude
-
-
 def find_perpendicular_heading(heading):
     """
     Takes a heading vector and finds the vector rotated 90 degrees around z axis
