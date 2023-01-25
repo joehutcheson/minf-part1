@@ -193,6 +193,9 @@ def find_min_long_distance(v_r, v_f,params):
 
 
 def find_min_long_distance_opposite_direction(v_1, v_2, params):
+    assert v_1 >= 0
+    assert v_2 < 0
+
     a_min_brake = params['a_long_min_brake']
     a_min_brake_corr = params['a_long_min_brake_correct']
     a_max_accel = params['a_long_max_accel']
