@@ -158,14 +158,9 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
 
 
 # Finds the minimum required longitudinal distance between cars by RSS Rule 1
-# Inputs: See RSS
+# Inputs: See RSS paper
 # Output: Minimum required distance
-def find_min_long_distance(v_r, v_f,
-                           params=None,
-                           a_max_accel=2.44,
-                           a_min_brake=3.2,
-                           a_max_brake=8.2,
-                           p=0.5):
+def find_min_long_distance(v_r, v_f,params):
     """
     Returns the minimum required longitudinal distance per Rule 1 of RSS
 
@@ -182,11 +177,10 @@ def find_min_long_distance(v_r, v_f,
             d_min: Minimum required distance
     """
 
-    if params is not None:
-        a_max_accel = params['a_long_max_accel']
-        a_min_brake = params['a_long_min_brake']
-        a_max_brake = params['a_long_max_brake']
-        p = params['p']
+    a_max_accel = params['a_long_max_accel']
+    a_min_brake = params['a_long_min_brake']
+    a_max_brake = params['a_long_max_brake']
+    p = params['p']
 
     d_min = (
             v_r * p
@@ -217,12 +211,7 @@ def find_min_long_distance_opposite_direction(v_1, v_2, params):
     return d_min
 
 
-def find_min_lat_distance(v_1, v_2,
-                          params=None,
-                          mu=0.1,
-                          a_lat_min_brake=1.0,
-                          a_lat_max_accel=1.0,
-                          p=0.5):
+def find_min_lat_distance(v_1, v_2, params):
     """
     Returns the minimum required lateral distance per Rule 2 of RSS. All parameters having right heading
 
@@ -240,11 +229,11 @@ def find_min_lat_distance(v_1, v_2,
 
     """
 
-    if params is not None:
-        mu = params['mu']
-        a_lat_min_brake = params['a_lat_min_brake']
-        a_lat_max_accel = params['a_lat_max_accel']
-        p = params['p']
+
+    mu = params['mu']
+    a_lat_min_brake = params['a_lat_min_brake']
+    a_lat_max_accel = params['a_lat_max_accel']
+    p = params['p']
 
     # if the cars are moving apart then situation is not dangerous
     if v_1 < 0 or v_2 > 0:
