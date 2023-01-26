@@ -177,6 +177,9 @@ def find_min_long_distance(v_r, v_f,params):
             d_min: Minimum required distance
     """
 
+    assert v_r >= 0
+    assert v_f >= 0
+
     a_max_accel = params['a_long_max_accel']
     a_min_brake = params['a_long_min_brake']
     a_max_brake = params['a_long_max_brake']
@@ -328,17 +331,8 @@ def is_right_of(v, p1, p2):
     return None
 
 
-def angle_between(a, b):
-    a = np.array(a)
-    b = np.array(b)
-    if norm(a) * norm(b) == 0:
-        return 0
-    theta = np.arccos(
-        a.dot(b) / (norm(a) * norm(b))
-    )
-    return theta
-
 def angle_to_vector(a):
+
     x = -np.sin(a)
     y = np.cos(a)
     return np.array([x,y])
