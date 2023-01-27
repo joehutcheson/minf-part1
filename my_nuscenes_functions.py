@@ -3,6 +3,7 @@ import math
 from constants import *
 from scipy.spatial.transform import Rotation
 
+
 def get_ego_velocity(nusc, sample_token):
     '''
     Finds the velocity of the ego in a given sample
@@ -42,7 +43,7 @@ def get_ego_velocity(nusc, sample_token):
 
     delta_translation = np.array(ego_pose_next['translation']) - np.array(ego_pose_prev['translation'])
     delta_time = (ego_pose_next['timestamp'] - ego_pose_prev['timestamp']) * 1e-6
-    assert delta_time != 0 # to avoid divide by zero error
+    assert delta_time != 0  # to avoid divide by zero error
     velocity = delta_translation / delta_time
 
     return velocity
@@ -63,7 +64,7 @@ def get_delta_translation(nusc, annotation):
     sample_data = nusc.get('sample_data', sample_data_token)
     ego_pose = nusc.get('ego_pose', sample_data['ego_pose_token'])
     ego_trans = np.array(ego_pose['translation'])[0:2]
-    
+
     w = renault_zoe_dims['width']
     l = renault_zoe_dims['length']
 
@@ -76,27 +77,25 @@ def get_delta_translation(nusc, annotation):
     calibrated_sensor = nusc.get('calibrated_sensor', sample_data['calibrated_sensor_token'])
     offset = calibrated_sensor['translation'][0]
 
-    front_right = rotation(angle, np.array([offset,-w/2]))
-    front_left = rotation(angle, np.array([offset, w/2]))
-    back_left = rotation(angle, np.array([offset-l,w/2]))
-    back_right = rotation(angle, np.array([offset-l,-w/2]))
-    
+    front_right = rotation(angle, np.array([offset, -w / 2]))
+    front_left = rotation(angle, np.array([offset, w / 2]))
+    back_left = rotation(angle, np.array([offset - l, w / 2]))
+    back_right = rotation(angle, np.array([offset - l, -w / 2]))
+
     ego_bb = [ego_trans + front_right,  # front-right
               ego_trans + front_left,  # front-left
               ego_trans + back_left,  # back-left
               ego_trans + back_right]  # back-right
 
     ego_bb = np.array(ego_bb)
-              
-    
+
     ann_bb = nusc.get_box(annotation['token']).bottom_corners()[0:2]
     ann_bb = np.array(list(zip(ann_bb[0], ann_bb[1])))
-    
+
     return find_translation(ego_bb, ann_bb)
-    
+
 
 def find_translation(ego_bb, ann_bb):
-
     ego_bb = np.array(ego_bb)
     ann_bb = np.array(ann_bb)
 
@@ -104,38 +103,38 @@ def find_translation(ego_bb, ann_bb):
     def length_between_line_and_point(p, l):
         if math.dist(l[0], l[1]) == 0:
             return math.dist(l[0], p)
-        l_squared = np.linalg.norm(l[0]-l[1])**2
-        t = max(0, min(1, np.dot(p - l[0], (l[1] - l[0])/l_squared)))
+        l_squared = np.linalg.norm(l[0] - l[1]) ** 2
+        t = max(0, min(1, np.dot(p - l[0], (l[1] - l[0]) / l_squared)))
         projection = l[0] + (t * (l[1] - l[0]))
         return math.dist(p, projection), projection
-        
-        
+
     # find min distance between corners and edges of the boxes
     min_dist, projection = length_between_line_and_point(ego_bb[0], ann_bb[0:2])
     min_trans = projection - ego_bb[0]
     for i in range(4):
         p1 = ego_bb[i]
-        p2 = ego_bb[(i+1)%4]
-        l = np.array([p1,p2])
+        p2 = ego_bb[(i + 1) % 4]
+        l = np.array([p1, p2])
         for j in range(4):
             p = ann_bb[j]
             dist, projection = length_between_line_and_point(p, l)
             if dist < min_dist:
                 min_dist = dist
                 min_trans = p - projection
-                
+
     for i in range(4):
         p1 = ann_bb[i]
-        p2 = ann_bb[(i+1)%4]
-        l = np.array([p1,p2])
+        p2 = ann_bb[(i + 1) % 4]
+        l = np.array([p1, p2])
         for j in range(4):
             p = ego_bb[j]
             dist, projection = length_between_line_and_point(p, l)
             if dist < min_dist:
                 min_dist = dist
                 min_trans = projection - p
-            
+
     return min_trans
+
 
 def rotation(a, p):
     """
@@ -151,13 +150,14 @@ def rotation(a, p):
     matrix = np.array([[np.cos(a), -np.sin(a)], [np.sin(a), np.cos(a)]])
     return matrix.dot(p)
 
+
 def get_car_heading(nusc, sample_token):
     sample = nusc.get('sample', sample_token)
     sample_data = nusc.get('sample_data', sample['data']['RADAR_FRONT'])
     ego_pose = nusc.get('ego_pose', sample_data['ego_pose_token'])
     r = ego_pose['rotation']
-    r = [r[1], r[2], r[3], r[0]] # convert to scalar last
+    r = [r[1], r[2], r[3], r[0]]  # convert to scalar last
     r = Rotation.from_quat(r)
-    r = r.as_euler('xyz')[2] - (np.pi/2) # convert to from y-axis
-    r = r % (2*np.pi)
+    r = r.as_euler('xyz')[2] - (np.pi / 2)  # convert to from y-axis
+    r = r % (2 * np.pi)
     return r

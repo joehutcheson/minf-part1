@@ -39,12 +39,14 @@ def generate_scores_for_scene(nusc, scene_token):
 
     return scores
 
+
 def generate_scores_for_instance(nusc, instance_token, aggressive=True):
     """
     Returns a list of scores for an interaction with an instance
         Parameters:
             nusc (NuScenes): NuScenes object
             instance_token (str): Token of instance
+            aggressive: If true, then aggressive RSS parameters are used, otherwise conservative parameters are used
 
         Returns:
             scores: list of dict containing
@@ -81,10 +83,10 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
             v_ego_aligned = rotation(-heading_angle, v_ego)
             v_ann_aligned = rotation(-heading_angle, v_ann)
 
-            v_ego_long = rotation(heading_angle, [0,v_ego_aligned[1]])
-            v_ego_lat = rotation(heading_angle, [v_ego_aligned[0],0])
-            v_ann_long = rotation(heading_angle, [0,v_ann_aligned[1]])
-            v_ann_lat = rotation(heading_angle, [v_ann_aligned[0],0])
+            v_ego_long = rotation(heading_angle, [0, v_ego_aligned[1]])
+            v_ego_lat = rotation(heading_angle, [v_ego_aligned[0], 0])
+            v_ann_long = rotation(heading_angle, [0, v_ann_aligned[1]])
+            v_ann_lat = rotation(heading_angle, [v_ann_aligned[0], 0])
 
             translation = get_delta_translation(nusc, annotation)
 
@@ -160,7 +162,7 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
 # Finds the minimum required longitudinal distance between cars by RSS Rule 1
 # Inputs: See RSS paper
 # Output: Minimum required distance
-def find_min_long_distance(v_r, v_f,params):
+def find_min_long_distance(v_r, v_f, params):
     """
     Returns the minimum required longitudinal distance per Rule 1 of RSS
 
@@ -168,10 +170,6 @@ def find_min_long_distance(v_r, v_f,params):
             v_r: Velocity of rear vehicle
             v_f: Velocity of front vehicle
             params: Parameter dictionary to use
-            p: Reaction time
-            a_max_accel: Maximum expected acceleration of rear car
-            a_min_brake: Minimum acceleration due to braking of rear car
-            a_max_brake: Maximum acceleration due to braking of front car
 
         Returns:
             d_min: Minimum required distance
@@ -225,16 +223,11 @@ def find_min_lat_distance(v_1, v_2, params):
             v_1: lateral velocity of left car (positive to the right)
             v_2: lateral velocity of right car (positive to the left)
             params: Parameter dictionary to use
-            mu: Minimum required distance between the cars
-            a_lat_min_brake: the minimum acceleration each car will apply apart from each other
-            a_lat_max_accel: the maximum acceleration each car will initially apply towards each other
-            p: response time
 
         Returns:
             d_min: minimum safe lateral distance
 
     """
-
 
     mu = params['mu']
     a_lat_min_brake = params['a_lat_min_brake']
@@ -296,9 +289,6 @@ def find_perpendicular_heading(heading):
     return np.array([heading[1], -heading[0]])
 
 
-
-
-
 def is_right_of(v, p1, p2):
     """
     Finds out if a point is to the right of another w.r.t the direction given by v
@@ -332,7 +322,6 @@ def is_right_of(v, p1, p2):
 
 
 def angle_to_vector(a):
-
     x = -np.sin(a)
     y = np.cos(a)
-    return np.array([x,y])
+    return np.array([x, y])
