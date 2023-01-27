@@ -285,7 +285,7 @@ class Test_Angle_To_Vectpr(TestCase):
         expected = [0, 1]
         actual = angle_to_vector(a)
 
-        np.testing.assert_array_equal(expected, actual)
+        np.testing.assert_allclose(expected, actual, atol=0.00001)
 
     def test_2(self):
         a = np.pi/2
@@ -295,4 +295,36 @@ class Test_Angle_To_Vectpr(TestCase):
 
         np.testing.assert_allclose(expected, actual, atol=0.00001)
 
-    # TODO: Add more tests here
+    def test_3(self):
+        a = np.pi
+
+        expected = [0, -1]
+        actual = angle_to_vector(a)
+
+        np.testing.assert_allclose(expected, actual, atol=0.00001)
+
+    def test_4(self):
+        a = 3 * np.pi / 2
+
+        expected = [1, 0]
+        actual = angle_to_vector(a)
+
+        np.testing.assert_allclose(expected, actual, atol=0.00001)
+
+    def test_5(self):
+        a = 2 * np.pi
+
+        expected = [0, 1]
+        actual = angle_to_vector(a)
+
+        np.testing.assert_allclose(expected, actual, atol=0.00001)
+
+    def test_6(self):
+        a = np.pi / 4
+
+        expected = [-1/np.sqrt(2), 1/np.sqrt(2)]
+        actual = angle_to_vector(a)
+
+        np.testing.assert_allclose(expected, actual, atol=0.00001)
+
+
