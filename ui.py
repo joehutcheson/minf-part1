@@ -35,6 +35,7 @@ def scene(token):
 
     for score in scores:
         nusc.render_annotation(score['annotation'], out_path='static/temp_renders/' + score['annotation'] + '.jpg')
+        score['score_rounded'] = '{:.2f}'.format(round(score['score'], 2))  # round score to 2.d.p
 
     return render_template('scene.html', nusc=nusc, token=token, scores=scores)
 
