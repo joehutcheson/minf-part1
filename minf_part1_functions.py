@@ -83,11 +83,6 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
             v_ego_aligned = rotation(-heading_angle, v_ego)
             v_ann_aligned = rotation(-heading_angle, v_ann)
 
-            v_ego_long = rotation(heading_angle, [0, v_ego_aligned[1]])
-            v_ego_lat = rotation(heading_angle, [v_ego_aligned[0], 0])
-            v_ann_long = rotation(heading_angle, [0, v_ann_aligned[1]])
-            v_ann_lat = rotation(heading_angle, [v_ann_aligned[0], 0])
-
             translation = get_delta_translation(nusc, annotation)
 
             # check the relative positions of the vehicles
@@ -101,13 +96,13 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
                 # find the minimum longitudinal distance between the cars
                 if v_ann_aligned[1] >= 0:
                     # cars travelling in same direction
-                    d_long_min = find_min_long_distance(norm(v_ego_long),
-                                                        norm(v_ann_long),
+                    d_long_min = find_min_long_distance(norm(v_ego_aligned[1]),
+                                                        norm(v_ann_aligned[1]),
                                                         params)
                 else:
                     # cars travelling in opposite directions
-                    d_long_min = find_min_long_distance_opposite_direction(norm(v_ego_long),
-                                                                           -norm(v_ann_long),
+                    d_long_min = find_min_long_distance_opposite_direction(norm(v_ego_aligned[1]),
+                                                                           -norm(v_ann_aligned[1]),
                                                                            params)
                 long_score = generate_individual_score(d_long_min, d_long)
             else:
