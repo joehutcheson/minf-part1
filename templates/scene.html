@@ -8,10 +8,49 @@
     {% for score in scores %}
     <tr>
         <td>
-            <p><b>Score:</b> {{ score['score_rounded'] }}</p>
+            <p><b>Score:</b> {{ "%0.2f"|format(score['score']|round(2)) }}</p>
             <p><b>Reason:</b> {{ score['reason'] }}</p>
             <p><b>Annotation:</b> {{ score['annotation'] }}</p>
             <p><b>Instance:</b> {{ score['instance'] }}</p>
+
+
+            <table>
+                <tr>
+                    <th>Velocities</th>
+                    <th>Longitudinal</th>
+                    <th>Lateral</th>
+                </tr>
+                <tr>
+                    <th>Ego</th>
+                    <td>{{ "%0.2f"|format(score['ego_long_velocity']|round(2)) }}</td>
+                    <td>{{ "%0.2f"|format(score['ego_lat_velocity']|round(2)) }}</td>
+                </tr>
+                <tr>
+                    <th>Other vehicle</th>
+                    <td>{{ "%0.2f"|format(score['ann_long_velocity']|round(2)) }}</td>
+                    <td>{{ "%0.2f"|format(score['ann_lat_velocity']|round(2)) }}</td>
+                </tr>
+            </table>
+
+            <br>
+
+            <table>
+                <tr>
+                    <th>Distances</th>
+                    <th>Longitudinal</th>
+                    <th>Lateral</th>
+                </tr>
+                <tr>
+                    <th>Min</th>
+                    <td>{{ "%0.2f"|format(score['min_long_distance']|round(2)) }}</td>
+                    <td>{{ "%0.2f"|format(score['min_lat_distance']|round(2)) }}</td>
+                </tr>
+                <tr>
+                    <th>Actual</th>
+                    <td>{{ "%0.2f"|format(score['long_distance']|round(2)) }}</td>
+                    <td>{{ "%0.2f"|format(score['lat_distance']|round(2)) }}</td>
+                </tr>
+            </table>
         </td>
         <td><img src="{{ url_for('static', filename='temp_renders/' + score['annotation'] + '.jpg') }}" style="width: 50em"></td>
     </tr>

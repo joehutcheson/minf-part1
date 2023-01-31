@@ -108,6 +108,8 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
             else:
                 # ego doesn't hold responsibility for vehicle behind
                 long_score = 1
+                d_long = None
+                d_long_min = None
 
             # find the lateral distance between the vehicles w.r.t the heading of the ego
             d_lat = np.abs(rotation(-heading_angle, translation)[0])
@@ -143,7 +145,15 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
             scores.append({
                 'annotation': annotation['token'],
                 'reason': reason,
-                'score': max_score
+                'score': max_score,
+                'ego_long_velocity': v_ego_aligned[1],
+                'ego_lat_velocity': v_ego_aligned[0],
+                'ann_long_velocity': v_ann_aligned[1],
+                'ann_lat_velocity': v_ann_aligned[0],
+                'long_distance': d_long,
+                'lat_distance': d_lat,
+                'min_long_distance': d_long_min,
+                'min_lat_distance': d_lat_min
             })
 
         # continue to the next annotation
