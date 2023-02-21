@@ -65,8 +65,6 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
     scores = []
     next_annotation = True
     while next_annotation:
-        # TODO: Make sure the longitudinal velocity is in relation to the road not the ego heading
-
         # check vehicle is not parked
         if not any([nusc.get('attribute', t)['name'] == 'vehicle.parked'
                     or nusc.get('attribute', t)['name'] == 'cycle.without_rider'
