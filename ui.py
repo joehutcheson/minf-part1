@@ -4,6 +4,13 @@ import sys
 import shutil
 from threading import Timer
 from flask import Flask, render_template
+import matplotlib
+
+
+# This fixes the issue where Matplotlib gives a threading error
+# Fixed using source:
+# https://forum.djangoproject.com/t/matplotlib-in-django-starting-a-matplotlib-gui-outside-of-the-main-thread/14732
+matplotlib.use('SVG')
 
 from nuscenes.nuscenes import NuScenes
 from minf_part1_functions import *
@@ -30,8 +37,6 @@ def index():
 @app.route('/scene/<string:token>')
 def scene(token):
     scores = [score for score in generate_scores_for_scene(nusc, token) if score['score'] < 1]
-
-    print(os.getcwd())
 
     for score in scores:
         nusc.render_annotation(score['annotation'], out_path='static/temp_renders/' + score['annotation'] + '.jpg')
