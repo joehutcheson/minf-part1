@@ -5,6 +5,7 @@ import shutil
 from threading import Timer
 from flask import Flask, render_template
 import matplotlib
+import matplotlib.pyplot as plt
 
 
 # This fixes the issue where Matplotlib gives a threading error
@@ -39,7 +40,14 @@ def scene(token):
     scores = [score for score in generate_scores_for_scene(nusc, token) if score['score'] < 1]
 
     for score in scores:
-        nusc.render_annotation(score['annotation'], out_path='static/temp_renders/' + score['annotation'] + '.jpg')
+        out_path = 'static/temp_renders/' + score['annotation'] + '.jpg'
+        try:
+            nusc.render_annotation(score['annotation'], out_path=out_path)
+        except:
+            fig = plt.figure(figsize=(18,9))
+            ax = fig.add_subplot()
+            ax.text(0.1, 0.1, 'NuScenes API was unable to render annotation', fontsize=25, color='red')
+            plt.savefig(out_path)
 
     return render_template('scene.html', nusc=nusc, token=token, scores=scores)
 

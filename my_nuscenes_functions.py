@@ -49,11 +49,12 @@ def get_ego_velocity(nusc, sample_token):
     return velocity
 
 
-def get_delta_translation(nusc, annotation):
+def get_delta_translation(nusc, annotation, heading_angle):
     '''
     Takes an annotation dictionary and finds the translation between it and the ego
 
         Parameters:
+            heading_angle: Heading of ego anti-clockwise from north
             nusc: NuScenes object
             annotation: dictionary annotation
         Returns:
@@ -92,7 +93,7 @@ def get_delta_translation(nusc, annotation):
     ann_bb = nusc.get_box(annotation['token']).bottom_corners()[0:2]
     ann_bb = np.array(list(zip(ann_bb[0], ann_bb[1])))
 
-    return find_translation(ego_bb, ann_bb)
+    return find_translation(ego_bb, ann_bb, heading_angle)
 
 
 def find_translation(ego_bb, ann_bb, heading_angle):
