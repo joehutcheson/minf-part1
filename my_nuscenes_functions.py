@@ -49,11 +49,12 @@ def get_ego_velocity(nusc, sample_token):
     return velocity
 
 
-def get_delta_translation(nusc, annotation):
+def get_delta_translation(nusc, annotation, heading_angle):
     '''
     Takes an annotation dictionary and finds the translation between it and the ego
 
         Parameters:
+            heading_angle: Heading of ego anti-clockwise from north
             nusc: NuScenes object
             annotation: dictionary annotation
         Returns:
@@ -92,48 +93,48 @@ def get_delta_translation(nusc, annotation):
     ann_bb = nusc.get_box(annotation['token']).bottom_corners()[0:2]
     ann_bb = np.array(list(zip(ann_bb[0], ann_bb[1])))
 
-    return find_translation(ego_bb, ann_bb)
+    return find_translation(ego_bb, ann_bb, heading_angle)
 
 
-def find_translation(ego_bb, ann_bb):
+def find_translation(ego_bb, ann_bb, heading_angle):
     ego_bb = np.array(ego_bb)
     ann_bb = np.array(ann_bb)
 
-    # https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
-    def length_between_line_and_point(p, l):
-        if math.dist(l[0], l[1]) == 0:
-            return math.dist(l[0], p)
-        l_squared = np.linalg.norm(l[0] - l[1]) ** 2
-        t = max(0, min(1, np.dot(p - l[0], (l[1] - l[0]) / l_squared)))
-        projection = l[0] + (t * (l[1] - l[0]))
-        return math.dist(p, projection), projection
-
-    # find min distance between corners and edges of the boxes
-    min_dist, projection = length_between_line_and_point(ego_bb[0], ann_bb[0:2])
-    min_trans = projection - ego_bb[0]
     for i in range(4):
-        p1 = ego_bb[i]
-        p2 = ego_bb[(i + 1) % 4]
-        l = np.array([p1, p2])
-        for j in range(4):
-            p = ann_bb[j]
-            dist, projection = length_between_line_and_point(p, l)
-            if dist < min_dist:
-                min_dist = dist
-                min_trans = p - projection
+        ego_bb[i] = rotation(-heading_angle, ego_bb[i])
+        ann_bb[i] = rotation(-heading_angle, ann_bb[i])
 
-    for i in range(4):
-        p1 = ann_bb[i]
-        p2 = ann_bb[(i + 1) % 4]
-        l = np.array([p1, p2])
-        for j in range(4):
-            p = ego_bb[j]
-            dist, projection = length_between_line_and_point(p, l)
-            if dist < min_dist:
-                min_dist = dist
-                min_trans = projection - p
+    ego_left = min([point[0] for point in ego_bb])
+    ego_right = max([point[0] for point in ego_bb])
+    ego_front = max([point[1] for point in ego_bb])
+    ego_back = min([point[1] for point in ego_bb])
 
-    return min_trans
+    ann_left = min([point[0] for point in ann_bb])
+    ann_right = max([point[0] for point in ann_bb])
+    ann_front = max([point[1] for point in ann_bb])
+    ann_back = min([point[1] for point in ann_bb])
+
+    x = find_dist_between_ranges([ego_left, ego_right], [ann_left, ann_right])
+    y = find_dist_between_ranges([ego_back, ego_front], [ann_back, ann_front])
+
+    translation = [x, y]
+    translation = rotation(heading_angle, translation)
+
+    return translation
+
+
+def find_dist_between_ranges(range_1, range_2):
+    # Sort the values in each range by size [small, big]
+    # Then find the distance between the ranges
+    range_1.sort()
+    range_2.sort()
+
+    if range_1[1] < range_2[0]:
+        return range_2[0] - range_1[1]
+    elif range_1[0] > range_2[1]:
+        return range_2[1] - range_1[0]
+    else:
+        return 0
 
 
 def rotation(a, p):
