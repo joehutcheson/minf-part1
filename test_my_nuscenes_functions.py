@@ -1,3 +1,4 @@
+import math
 from unittest import TestCase
 import numpy as np
 
@@ -119,5 +120,41 @@ class TestRotation(TestCase):
         angle = np.pi / 2
         vector = [0, 1]
         expected = np.array([-1, 0])
+        actual = rotation(angle, vector)
+        np.testing.assert_allclose(expected, actual, atol=0.00001)
+
+    def test_90_degree_2(self):
+        angle = np.pi / 2
+        vector = [1, 0]
+        expected = np.array([0, 1])
+        actual = rotation(angle, vector)
+        np.testing.assert_allclose(expected, actual, atol=0.00001)
+
+    def test_90_degree_3(self):
+        angle = np.pi / 2
+        vector = [0, -1]
+        expected = np.array([1, 0])
+        actual = rotation(angle, vector)
+        np.testing.assert_allclose(expected, actual, atol=0.00001)
+
+
+    def test_90_degree_4(self):
+        angle = np.pi / 2
+        vector = [-1, 0]
+        expected = np.array([0, -1])
+        actual = rotation(angle, vector)
+        np.testing.assert_allclose(expected, actual, atol=0.00001)
+
+    def test_neg_90_degree(self):
+        angle = -np.pi / 2
+        vector = [1, 0]
+        expected = np.array([0, -1])
+        actual = rotation(angle, vector)
+        np.testing.assert_allclose(expected, actual, atol=0.00001)
+
+    def test_45_degree(self):
+        angle = np.pi / 4
+        vector = [1, 0]
+        expected = np.array([1/math.sqrt(2), 1/math.sqrt(2)])
         actual = rotation(angle, vector)
         np.testing.assert_allclose(expected, actual, atol=0.00001)
