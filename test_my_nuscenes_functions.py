@@ -20,7 +20,6 @@ def test_with_rotation(ego_bb, ann_bb, expected):
 
 
 class TestFindTranslation(TestCase):
-    # TODO: Rewrite with updated functionality
 
     def test_1(self):
         ego_bb = np.array(([1, 1], [0, 1], [0, 0], [1, 0]))
