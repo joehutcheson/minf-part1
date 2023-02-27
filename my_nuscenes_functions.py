@@ -1,22 +1,21 @@
 import numpy as np
-import math
 from constants import *
 from scipy.spatial.transform import Rotation
 
 
 def get_ego_velocity(nusc, sample_token):
-    '''
+    """
     Finds the velocity of the ego in a given sample
 
     Adapted from NuScenes SDK method NuScenes.box_velocity() (https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/nuscenes.py)
-    
+
         Parameters:
             nusc: NuScenes object
             sample_token (str): sample_token to calculate velocity for
         Returns:
             velocity: velocity of ego
-    
-    '''
+
+    """
     velocity = np.zeros(3)
 
     sample_data_token = nusc.get('sample', sample_token)['data']['CAM_FRONT']
@@ -50,8 +49,10 @@ def get_ego_velocity(nusc, sample_token):
 
 
 def get_delta_translation(nusc, annotation, heading_angle):
-    '''
-    Takes an annotation dictionary and finds the translation between it and the ego
+    """
+    Takes an annotation dictionary and finds the translation between it and the ego.
+
+    See find_translation() for the method of calculating translation.
 
         Parameters:
             heading_angle: Heading of ego anti-clockwise from north
@@ -59,7 +60,7 @@ def get_delta_translation(nusc, annotation, heading_angle):
             annotation: dictionary annotation
         Returns:
             translation: numpy array in form [x,y]
-    '''
+    """
     sample = nusc.get('sample', annotation['sample_token'])
     sample_data_token = sample['data']['RADAR_FRONT']
     sample_data = nusc.get('sample_data', sample_data_token)
@@ -97,18 +98,36 @@ def get_delta_translation(nusc, annotation, heading_angle):
 
 
 def find_translation(ego_bb, ann_bb, heading_angle):
+    """
+    Finds the translation between the ego and annotation.
+
+    Note: Translation is the minimum longitudinal and lateral distances between
+    the ego and the other object. These distances are calculated individually.
+
+    Args:
+        ego_bb: bounding box of ego
+        ann_bb: bounding box of annotation
+        heading_angle: heading of the ego in radians
+
+    Returns: translation between objects
+
+    """
+
     ego_bb = np.array(ego_bb)
     ann_bb = np.array(ann_bb)
 
+    # rotate all points to be aligned with ego
     for i in range(4):
         ego_bb[i] = rotation(-heading_angle, ego_bb[i])
         ann_bb[i] = rotation(-heading_angle, ann_bb[i])
 
+    # find the bounds of the ego
     ego_left = min([point[0] for point in ego_bb])
     ego_right = max([point[0] for point in ego_bb])
     ego_front = max([point[1] for point in ego_bb])
     ego_back = min([point[1] for point in ego_bb])
 
+    # find the bounds of the annotation
     ann_left = min([point[0] for point in ann_bb])
     ann_right = max([point[0] for point in ann_bb])
     ann_front = max([point[1] for point in ann_bb])
@@ -124,6 +143,20 @@ def find_translation(ego_bb, ann_bb, heading_angle):
 
 
 def find_dist_between_ranges(range_1, range_2):
+    """
+    Finds the distance between two ranges.
+
+    If ranges overlap, then the distance is zero,
+    otherwise is the distance between the edges.
+
+    Args:
+        range_1: first 1-D list of length 2
+        range_2: second 1-D list of length 2
+
+    Returns: distance between ranges
+
+    """
+
     # Sort the values in each range by size [small, big]
     # Then find the distance between the ranges
     range_1.sort()
@@ -139,12 +172,12 @@ def find_dist_between_ranges(range_1, range_2):
 
 def rotation(a, p):
     """
-    Rotates the 2-dimensional input vector anti-clockwise by the input value
+    Rotates the 2-dimensional input point anti-clockwise by the input value
     Args:
-        a: rotation angle
+        a: rotation point
         p: input vector
 
-    Returns:
+    Returns: rotated point
 
     """
     p = np.array(p)[0:2]
@@ -153,6 +186,17 @@ def rotation(a, p):
 
 
 def get_car_heading(nusc, sample_token):
+    """
+    Finds the heading of the car at given sample
+
+    Args:
+        nusc: NuScenes object
+        sample_token: token of sample
+
+    Returns: heading of car
+
+    """
+
     sample = nusc.get('sample', sample_token)
     sample_data = nusc.get('sample_data', sample['data']['RADAR_FRONT'])
     ego_pose = nusc.get('ego_pose', sample_data['ego_pose_token'])

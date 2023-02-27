@@ -164,9 +164,6 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
     return scores
 
 
-# Finds the minimum required longitudinal distance between cars by RSS Rule 1
-# Inputs: See RSS paper
-# Output: Minimum required distance
 def find_min_long_distance(v_r, v_f, params):
     """
     Returns the minimum required longitudinal distance per Rule 1 of RSS
@@ -199,6 +196,19 @@ def find_min_long_distance(v_r, v_f, params):
 
 
 def find_min_long_distance_opposite_direction(v_1, v_2, params):
+    """
+    Finds the minimum longitudinal distance with must be maintained between two cars
+    travelling towards each other.
+
+    Args:
+        v_1: Velocity of car with positive velocity
+        v_2: Velocity of car with negative velocity
+        params: Parameter dictionary to use
+
+    Returns: Minimum distance required
+
+    """
+
     assert v_1 >= 0
     assert v_2 < 0
 
@@ -327,6 +337,16 @@ def is_right_of(v, p1, p2):
 
 
 def angle_to_vector(a):
+    """
+    Converts an angle in radians to a unit vector with the angle's heading.
+
+    Args:
+        a: input angle
+
+    Returns: unit vector with heading of input angle
+
+    """
+
     x = -np.sin(a)
     y = np.cos(a)
     return np.array([x, y])
