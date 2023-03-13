@@ -5,49 +5,49 @@ import numpy as np
 from my_nuscenes_functions import find_translation, rotation, find_dist_between_ranges
 
 
-def test_with_rotation(ego_bb, ann_bb, expected):
-    back = np.array(ego_bb[-1])
-    front = np.array(ego_bb[0])
-
-    ego_heading = front - back
-
-    ego_heading = np.arctan2(ego_heading[0], ego_heading[1])
-
-    for _ in range(4):
-        actual = find_translation(ego_bb, ann_bb, ego_heading)
-        np.testing.assert_allclose(expected, actual, atol=0.00001)
-        ann_bb = np.roll(ann_bb, 1, axis=0)
-
-
 class TestFindTranslation(TestCase):
+
+
+    def helper_test_with_rotation(self, ego_bb, ann_bb, expected):
+        back = np.array(ego_bb[-1])
+        front = np.array(ego_bb[0])
+
+        ego_heading = front - back
+
+        ego_heading = np.arctan2(ego_heading[0], ego_heading[1])
+
+        for _ in range(4):
+            actual = find_translation(ego_bb, ann_bb, ego_heading)
+            np.testing.assert_allclose(expected, actual, atol=0.00001)
+            ann_bb = np.roll(ann_bb, 1, axis=0)
 
     def test_1(self):
         ego_bb = np.array(([1, 1], [0, 1], [0, 0], [1, 0]))
         ann_bb = np.array([[3, 1], [2, 1], [2, 0], [3, 0]])
         expected = [1, 0]
 
-        test_with_rotation(ego_bb, ann_bb, expected)
+        self.helper_test_with_rotation(ego_bb, ann_bb, expected)
 
     def test_2(self):
         ego_bb = np.array([[3, 3], [2, 3], [2, 1], [3, 1]])
         ann_bb = np.array([[4, 3], [6, 4], [5, 6], [3, 5]])
         expected = [0, 0]
 
-        test_with_rotation(ego_bb, ann_bb, expected)
+        self.helper_test_with_rotation(ego_bb, ann_bb, expected)
 
     def test_3(self):
         ego_bb = np.array([[6, 3], [6, 4], [4, 4], [4, 3]])
         ann_bb = np.array([[2, 4], [1, 4], [1, 2], [2, 2]])
         expected = [-2, 0]
 
-        test_with_rotation(ego_bb, ann_bb, expected)
+        self.helper_test_with_rotation(ego_bb, ann_bb, expected)
 
     def test_4(self):
         ego_bb = np.array([[5, 6], [4, 6], [4, 4], [5, 4]])
         ann_bb = np.array([[2, 1], [1, 2], [0, 1], [1, 0]])
         expected = [-2, -2]
 
-        test_with_rotation(ego_bb, ann_bb, expected)
+        self.helper_test_with_rotation(ego_bb, ann_bb, expected)
 
 
 class TestFindDistBetweenRanges(TestCase):
