@@ -185,7 +185,7 @@ def rotation(a, p):
     return matrix.dot(p)
 
 
-def get_car_heading(nusc, sample_token):
+def get_ego_heading(nusc, sample_token):
     """
     Finds the heading of the car at given sample
 

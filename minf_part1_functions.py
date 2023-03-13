@@ -3,7 +3,7 @@ from my_nuscenes_functions import *
 from constants import *
 
 
-def generate_scores_for_scene(nusc, scene_token):
+def generate_scores_for_scene(nusc, scene_token, aggressive=True):
     scores = []
 
     scene = nusc.get('scene', scene_token)
@@ -24,7 +24,7 @@ def generate_scores_for_scene(nusc, scene_token):
             instance = nusc.get('instance', instance_token)
             category = nusc.get('category', instance['category_token'])['name']
             if instance_token not in instances and 'vehicle' in category:
-                s = generate_scores_for_instance(nusc, instance_token, aggressive=True)
+                s = generate_scores_for_instance(nusc, instance_token, aggressive=aggressive)
                 if s:
                     s = min(s, key=get_score)
                     s['instance'] = instance_token
@@ -77,7 +77,7 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
             # Check all velocities are valid
             if not (np.isnan(v_ego).any() or np.isnan(v_ann).any()):
                 # find the longitudinal and lateral velocities w.r.t the heading of the ego
-                heading_angle = get_car_heading(nusc, annotation['sample_token'])
+                heading_angle = get_ego_heading(nusc, annotation['sample_token'])
                 heading_vector = angle_to_vector(heading_angle)
 
                 v_ego_aligned = rotation(-heading_angle, v_ego)

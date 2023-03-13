@@ -3,7 +3,7 @@ import os
 import sys
 import shutil
 from threading import Timer
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect
 import matplotlib
 import matplotlib.pyplot as plt
 
@@ -24,6 +24,8 @@ dataroot = sys.argv[1]
 version = sys.argv[2]
 nusc = NuScenes(version=version, dataroot=dataroot, verbose=False)
 
+aggressive = True
+
 
 def start_browser():
     if not os.environ.get("WERKZEUG_RUN_MAIN"):
@@ -32,12 +34,20 @@ def start_browser():
 
 @app.route('/')
 def index():
-    return render_template('index.html', nusc=nusc)
+    return render_template('index.html', nusc=nusc, aggressive=aggressive)
+
+
+@app.route('/trigger_aggressive')
+def trigger_aggressive():
+    global aggressive
+    aggressive = not aggressive
+    return redirect('/')
+
 
 
 @app.route('/scene/<string:token>')
 def scene(token):
-    scores = [score for score in generate_scores_for_scene(nusc, token) if score['score'] < 1]
+    scores = [score for score in generate_scores_for_scene(nusc, token, aggressive) if score['score'] < 1]
 
     for score in scores:
         out_path = 'static/temp_renders/' + score['annotation'] + '.jpg'
