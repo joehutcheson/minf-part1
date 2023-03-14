@@ -78,7 +78,6 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
             if not (np.isnan(v_ego).any() or np.isnan(v_ann).any()):
                 # find the longitudinal and lateral velocities w.r.t the heading of the ego
                 heading_angle = get_ego_heading(nusc, annotation['sample_token'])
-                heading_vector = angle_to_vector(heading_angle)
 
                 v_ego_aligned = rotation(-heading_angle, v_ego)
                 v_ann_aligned = rotation(-heading_angle, v_ann)
@@ -86,8 +85,8 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
                 translation = get_delta_translation(nusc, annotation, heading_angle)
 
                 # check the relative positions of the vehicles
-                ego_is_behind = is_right_of(find_perpendicular_heading(heading_vector), np.zeros(2), translation)
-                ego_is_right = is_right_of(heading_vector, np.zeros(2), translation)
+                ego_is_behind = is_right_of(heading_angle + np.pi/2, np.zeros(2), translation)
+                ego_is_right = is_right_of(heading_angle, np.zeros(2), translation)
 
                 if ego_is_behind:
                     # find the longitudinal distance between the vehicles w.r.t the
@@ -127,7 +126,7 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
                 d_lat_min = find_min_lat_distance(v1,
                                                   v2,
                                                   params)
-                lat_score = generate_individual_score(d_lat_min, d_lat, strictness=1)
+                lat_score = generate_individual_score(d_lat_min, d_lat, gradient=1)
 
                 # if either the lateral distance or the longitudinal distance is okay,
                 # then we consider the situation safe, hence max of each score is used
@@ -268,14 +267,14 @@ def find_min_lat_distance(v_1, v_2, params):
     return max([mu, mu + d_min])
 
 
-def generate_individual_score(minimum, actual, strictness=0.2):
+def generate_individual_score(minimum, actual, gradient=0.2):
     """
     Generates a score between 0 and 1 given minimum and actual values
 
         Parameters:
             minimum: minimum allowable value
             actual: actual value
-            strictness: measure of how close the values can be. Higher value gives higher score when close
+            gradient: measure of how close the values can be. Higher value gives higher score when close
 
         Returns:
             score: the generated score
@@ -286,7 +285,7 @@ def generate_individual_score(minimum, actual, strictness=0.2):
     if margin <= 0:
         return 0
 
-    score = strictness * margin
+    score = gradient * margin
 
     return min(1, score)  # score cannot be greater than 1
 
@@ -304,12 +303,12 @@ def find_perpendicular_heading(heading):
     return np.array([heading[1], -heading[0]])
 
 
-def is_right_of(v, p1, p2):
+def is_right_of(theta, p1, p2):
     """
     Finds out if a point is to the right of another w.r.t the direction given by v
 
         Parameters:
-            v: heading_vector
+            theta: heading angle
             p1: first point
             p2: second point
 
@@ -318,12 +317,8 @@ def is_right_of(v, p1, p2):
     """
 
     # ensure only 2-dimensional
-    v = v[0:2]
     p1 = p1[0:2]
     p2 = p2[0:2]
-
-    # calculate clockwise angle of heading from y-axis
-    theta = np.arctan2(v[0], v[1])
 
     p1 = rotation(theta, p1)
     p2 = rotation(theta, p2)

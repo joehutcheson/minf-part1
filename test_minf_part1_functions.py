@@ -178,7 +178,7 @@ class TestGenerateIndividualScore(TestCase):
         actual = 14.5
 
         expected = 0.5
-        result = generate_individual_score(minimum, actual, strictness=1)
+        result = generate_individual_score(minimum, actual, gradient=1)
 
         self.assertAlmostEqual(expected, result)
 
@@ -222,61 +222,61 @@ class TestFindPerpendicularHeading(TestCase):
 
 class TestIsRightOf(TestCase):
     def test_0_degree_true(self):
-        v = [0, 1]
+        theta = 0
         p1 = [1, 0]
         p2 = [-1, 0]
-        self.assertTrue(is_right_of(v, p1, p2))
+        self.assertTrue(is_right_of(theta, p1, p2))
 
     def test_0_degree_false(self):
-        v = [0, 1]
+        theta = 0
         p1 = [-1, 0]
         p2 = [1, 0]
-        self.assertFalse(is_right_of(v, p1, p2))
+        self.assertFalse(is_right_of(theta, p1, p2))
 
     def test_0_degree_inline(self):
-        v = [0, 1]
+        theta = 0
         p1 = [0, 0]
         p2 = [0, -1]
 
-        self.assertIsNone(is_right_of(v, p1, p2))
+        self.assertIsNone(is_right_of(theta, p1, p2))
 
     def test_90_degree_true(self):
-        v = [1, 0]
+        theta = np.pi/2
         p1 = [0, -1]
         p2 = [0, 1]
-        self.assertTrue(is_right_of(v, p1, p2))
+        self.assertTrue(is_right_of(theta, p1, p2))
 
     def test_90_degree_false(self):
-        v = [1, 0]
+        theta = np.pi/2
         p1 = [0, 1]
         p2 = [0, -1]
 
-        self.assertFalse(is_right_of(v, p1, p2))
+        self.assertFalse(is_right_of(theta, p1, p2))
 
     def test_180_degree_true(self):
-        v = [0, -1]
+        theta = np.pi
         p1 = [-1, 0]
         p2 = [1, 0]
-        self.assertTrue(is_right_of(v, p1, p2))
+        self.assertTrue(is_right_of(theta, p1, p2))
 
     def test_180_degree_false(self):
-        v = [0, -1]
+        theta = np.pi
         p1 = [1, 0]
         p2 = [-1, 0]
-        self.assertFalse(is_right_of(v, p1, p2))
+        self.assertFalse(is_right_of(theta, p1, p2))
 
     def test_270_degree_true(self):
-        v = [-1, 0]
+        theta = 3 * np.pi/2
         p1 = [0, 1]
         p2 = [0, -1]
-        self.assertTrue(is_right_of(v, p1, p2))
+        self.assertTrue(is_right_of(theta, p1, p2))
 
     def test_270_degree_false(self):
-        v = [-1, 0]
+        theta = 3 * np.pi/2
         p1 = [0, -1]
         p2 = [0, 1]
 
-        self.assertFalse(is_right_of(v, p1, p2))
+        self.assertFalse(is_right_of(theta, p1, p2))
 
 
 class TestAngleToVector(TestCase):
