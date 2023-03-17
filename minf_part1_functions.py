@@ -103,7 +103,7 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
                         d_long_min = find_min_long_distance_opposite_direction(norm(v_ego_aligned[1]),
                                                                                -norm(v_ann_aligned[1]),
                                                                                params)
-                    long_score = generate_individual_score(d_long_min, d_long)
+                    long_score = generate_individual_score(d_long_min, d_long, gradient=0.4)
                 else:
                     # ego doesn't hold responsibility for vehicle behind
                     long_score = 1
@@ -135,6 +135,8 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
                 # note the reason for the score
                 if max_score == 1:
                     reason = None
+                elif max_score == 0:
+                    reason = 'Too close'
                 elif max_score == long_score:
                     reason = 'Longitudinally too close'
                 elif max_score == lat_score:
