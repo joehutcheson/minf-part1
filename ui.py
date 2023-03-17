@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 matplotlib.use('SVG')
 
 from nuscenes.nuscenes import NuScenes
-from minf_part1_functions import *
+from scoring import *
 
 app = Flask(__name__)
 HOST = '127.0.0.1'  # only visible to local machine

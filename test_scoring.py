@@ -1,7 +1,7 @@
 from unittest import TestCase
 import numpy as np
 
-from minf_part1_functions import find_min_long_distance, find_min_long_distance_opposite_direction, \
+from scoring import find_min_long_distance, find_min_long_distance_opposite_direction, \
     find_min_lat_distance, generate_individual_score, find_perpendicular_heading, is_right_of, angle_to_vector
 from constants import *
 
