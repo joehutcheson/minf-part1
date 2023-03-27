@@ -1,7 +1,12 @@
 {% extends 'base.html' %} {% block content %}
 <h1>{% block title %}Joe Hutcheson - MInf Project{% endblock title %}</h1>
 
-<p>Aggressive: <b>{{ aggressive }}</b> <a href="/trigger_aggressive">SWITCH</a> </p>
+<p>Parameter set in use: <b>{{ 'Aggressive' if aggressive else 'Conservative' }}</b> </p>
+<p><a href="/trigger_aggressive">Switch to {{ 'aggressive' if not aggressive else 'conservative' }} parameter set</a> </p>
+
+
+<h2>Whole dataset statistics:</h2>
+<a href="/dataset_stats">Run</a>
 
 <h2>Select scene:</h2>
 <table>

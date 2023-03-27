@@ -1,0 +1,29 @@
+{% extends 'base.html' %} {% block content %}
+
+    <table>
+        <tr>
+            <td>
+                <img src="{{ url_for('static', filename='temp_renders/dataset.svg') }}" style="width: 100%">
+            </td>
+            <td>
+                <img src="{{ url_for('static', filename='temp_renders/dataset_pie.svg') }}" style="width: 100%">
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <img src="{{ url_for('static', filename='temp_renders/dataset_danger.svg') }}" style="width: 100%">
+            </td>
+            <td>
+                <img src="{{ url_for('static', filename='temp_renders/dataset_reasons.svg') }}" style="width: 100%">
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <img src="{{ url_for('static', filename='temp_renders/dataset_heatmap.svg') }}" style="width: 100%">
+            </td>
+        </tr>
+    </table>
+
+{% endblock content %}
