@@ -146,6 +146,11 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
                         reason = 'Laterally too close'
                     else:
                         reason = 'Unknown'
+
+                    # Copy reason from last iteration if possible when current reason is unhelpful
+                    if reason == "Too close" and len(scores) > 0:
+                        reason = scores[-1]['reason']
+
                     scores.append({
                         'annotation': annotation['token'],
                         'reason': reason,
