@@ -25,7 +25,7 @@ PORT = 8080
 
 dataroot = sys.argv[1]
 version = sys.argv[2]
-nusc = NuScenes(version=version, dataroot=dataroot, verbose=False)
+nusc = NuScenes(version=version, dataroot=dataroot, verbose=True)
 
 aggressive = True
 
