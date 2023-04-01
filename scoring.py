@@ -159,8 +159,8 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
                         'ego_lat_velocity': v_ego_aligned[0],
                         'ann_long_velocity': v_ann_aligned[1],
                         'ann_lat_velocity': v_ann_aligned[0],
-                        'long_distance': rotation(-heading_angle, translation)[1],
-                        'lat_distance': rotation(-heading_angle, translation)[0],
+                        'long_distance': np.abs(rotation(-heading_angle, translation)[1]),
+                        'lat_distance': np.abs(rotation(-heading_angle, translation)[0]),
                         'min_long_distance': d_long_min,
                         'min_lat_distance': d_lat_min
                     })
