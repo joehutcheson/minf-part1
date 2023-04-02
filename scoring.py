@@ -26,9 +26,10 @@ def generate_scores_for_scene(nusc, scene_token, aggressive=True):
             if instance_token not in instances and 'vehicle' in category:
                 s = generate_scores_for_instance(nusc, instance_token, aggressive=aggressive)
                 if s:
-                    s = min(s, key=get_score)
-                    s['instance'] = instance_token
-                    scores.append(s)
+                    s = sorted(s, key=get_score)[:10]  # get 10 smallest values
+                    for x in s:
+                        x['instance'] = instance_token
+                    scores += s
                     instances.add(instance_token)
 
         # check for next sample
