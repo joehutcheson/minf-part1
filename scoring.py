@@ -4,6 +4,17 @@ from constants import *
 
 
 def generate_scores_for_scene(nusc, scene_token, aggressive=True):
+    """
+    Identifies dangerous scenarios in a scene
+    Args:
+        nusc (NuScenes): a nuScenes object
+        scene_token (str): the token of the scene to analyse
+        aggressive: If true, then aggressive RSS parameters are used, otherwise conservative parameters are used
+
+    Returns:
+
+    """
+
     scores = []
 
     scene = nusc.get('scene', scene_token)
