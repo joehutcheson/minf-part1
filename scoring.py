@@ -91,6 +91,8 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
                     ego_is_behind = is_right_of(-heading_angle + np.pi/2, np.zeros(2), translation)
                     ego_is_right = is_right_of(-heading_angle, np.zeros(2), translation)
 
+                    same_direction = None
+
                     if ego_is_behind:
                         # find the longitudinal distance between the vehicles w.r.t the
                         # heading of the ego
@@ -98,11 +100,13 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
                         # find the minimum longitudinal distance between the cars
                         if v_ann_aligned[1] >= 0:
                             # cars travelling in same direction
+                            same_direction = True
                             d_long_min = find_min_long_distance(norm(v_ego_aligned[1]),
                                                                 norm(v_ann_aligned[1]),
                                                                 params)
                         else:
                             # cars travelling in opposite directions
+                            same_direction = False
                             d_long_min = find_min_long_distance_opposite_direction(norm(v_ego_aligned[1]),
                                                                                    -norm(v_ann_aligned[1]),
                                                                                    params)
@@ -163,7 +167,8 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
                         'long_distance': rotation(-heading_angle, translation)[1],
                         'lat_distance': rotation(-heading_angle, translation)[0],
                         'min_long_distance': d_long_min,
-                        'min_lat_distance': d_lat_min
+                        'min_lat_distance': d_lat_min,
+                        'same_direction': same_direction
                     })
 
         # continue to the next annotation
