@@ -31,17 +31,33 @@ aggressive = True
 
 
 def start_browser():
+    """
+    Starts the browser only on initial run (aka not on auto restart)
+
+    """
     if not os.environ.get("WERKZEUG_RUN_MAIN"):
         webbrowser.open('http://' + HOST + ':' + str(PORT) + '/')
 
 
 @app.route('/')
 def index():
+    """
+    Home page endpoint
+
+    Returns: the html file for the home page
+
+    """
     return render_template('index.html', nusc=nusc, aggressive=aggressive)
 
 
 @app.route('/trigger_aggressive')
 def trigger_aggressive():
+    """
+    Switches between parameter sets then redirects back to home page
+
+    Returns: home page
+
+    """
     global aggressive
     aggressive = not aggressive
     return redirect('/')
@@ -50,6 +66,16 @@ def trigger_aggressive():
 
 @app.route('/scene/<string:token>')
 def scene(token):
+    """
+    Runs the tools analyses on a specific scene in the dataset
+
+    Args:
+        token: scene token
+
+    Returns: results of analyses as webpage
+
+    """
+
     scores = [score for score in generate_scores_for_scene(nusc, token, aggressive) if score['score'] < 1]
 
     for score in scores:
@@ -66,6 +92,13 @@ def scene(token):
 
 @app.route('/dataset_stats')
 def dataset_stats():
+    """
+    Runs the tools analyses over the entire dataset and then returns results as graphs
+
+    Returns: results page
+
+    """
+
     scores_raw = []
     for scene in nusc.scene:
         scores_raw += generate_scores_for_scene(nusc, scene['token'], aggressive=aggressive)
@@ -136,6 +169,11 @@ def dataset_stats():
 
 
 def main():
+    """
+    Starts the web server
+
+    """
+
     temp_render_dir = 'static/temp_renders'
     if os.path.exists(temp_render_dir):
         shutil.rmtree(temp_render_dir)
