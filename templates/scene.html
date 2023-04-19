@@ -47,8 +47,8 @@
                 </tr>
                 <tr>
                     <th>Actual</th>
-                    <td>{{ "%0.2f"|format(score['long_distance']|round(2)) }}</td>
-                    <td>{{ "%0.2f"|format(score['lat_distance']|round(2)) }}</td>
+                    <td>{{ "%0.2f"|format(score['long_distance']|abs|round(2)) }}</td>
+                    <td>{{ "%0.2f"|format(score['lat_distance']|abs|round(2)) }}</td>
                 </tr>
             </table>
         </td>
