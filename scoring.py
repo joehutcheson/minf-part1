@@ -76,111 +76,10 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
     scores = []
     next_annotation = True
     while next_annotation:
-        # check vehicle is not parked
-        if not any([nusc.get('attribute', t)['name'] == 'vehicle.parked'
-                    or nusc.get('attribute', t)['name'] == 'cycle.without_rider'
-                    for t in annotation['attribute_tokens']]):
+        score = generate_score_for_annotation(annotation, nusc, params, scores)
 
-            # find velocities of ego and annotated vehicle
-            v_ego = get_ego_velocity(nusc, annotation['sample_token'])
-            v_ann = nusc.box_velocity(annotation['token'])
-
-            # Check all velocities are valid
-            if not (np.isnan(v_ego).any() or np.isnan(v_ann).any()):
-                # find the longitudinal and lateral velocities w.r.t the heading of the ego
-                heading_angle = get_ego_heading(nusc, annotation['sample_token'])
-
-                v_ego_aligned = rotation(-heading_angle, v_ego)
-                v_ann_aligned = rotation(-heading_angle, v_ann)
-
-                # Not yet handling reversing
-                if v_ego_aligned[1] >= 0:
-
-                    translation = get_delta_translation(nusc, annotation, heading_angle)
-
-                    # check the relative positions of the vehicles
-                    ego_is_behind = is_right_of(-heading_angle + np.pi/2, np.zeros(2), translation)
-                    ego_is_right = is_right_of(-heading_angle, np.zeros(2), translation)
-
-                    same_direction = None
-
-                    if ego_is_behind:
-                        # find the longitudinal distance between the vehicles w.r.t the
-                        # heading of the ego
-                        d_long = np.abs(rotation(-heading_angle, translation)[1])
-                        # find the minimum longitudinal distance between the cars
-                        if v_ann_aligned[1] >= 0:
-                            # cars travelling in same direction
-                            same_direction = True
-                            d_long_min = find_min_long_distance(norm(v_ego_aligned[1]),
-                                                                norm(v_ann_aligned[1]),
-                                                                params)
-                        else:
-                            # cars travelling in opposite directions
-                            same_direction = False
-                            d_long_min = find_min_long_distance_opposite_direction(norm(v_ego_aligned[1]),
-                                                                                   -norm(v_ann_aligned[1]),
-                                                                                   params)
-                        long_score = generate_individual_score(d_long_min, d_long, gradient=0.4)
-                    else:
-                        # ego doesn't hold responsibility for vehicle behind
-                        long_score = 1
-                        d_long = None
-                        d_long_min = None
-
-                    # find the lateral distance between the vehicles w.r.t the heading of the ego
-                    d_lat = np.abs(rotation(-heading_angle, translation)[0])
-
-                    # Assign velocities to input variables for RSS rule 2.
-                    # c1 is on the left, c2 is on the right, with velocities v1 and v2 respectively
-                    if ego_is_right:
-                        v1 = v_ann_aligned[0]
-                        v2 = v_ego_aligned[0]
-                    else:
-                        v1 = v_ego_aligned[0]
-                        v2 = v_ann_aligned[0]
-
-                    # find the minimum lateral distances between the cars
-                    d_lat_min = find_min_lat_distance(v1,
-                                                      v2,
-                                                      params)
-                    lat_score = generate_individual_score(d_lat_min, d_lat, gradient=1)
-
-                    # if either the lateral distance or the longitudinal distance is okay,
-                    # then we consider the situation safe, hence max of each score is used
-                    max_score = max([long_score, lat_score])
-
-                    # note the reason for the score
-                    if max_score == 1:
-                        reason = None
-                    elif max_score == 0:
-                        reason = 'Too close'
-                    elif max_score == long_score:
-                        reason = 'Longitudinally too close'
-                    elif max_score == lat_score:
-                        reason = 'Laterally too close'
-                    else:
-                        reason = 'Unknown'
-
-                    # Copy reason from last iteration if possible when current reason is unhelpful
-                    if reason == "Too close" and len(scores) > 0:
-                        if scores[-1]['reason'] is not None:
-                            reason = scores[-1]['reason']
-
-                    scores.append({
-                        'annotation': annotation['token'],
-                        'reason': reason,
-                        'score': max_score,
-                        'ego_long_velocity': v_ego_aligned[1],
-                        'ego_lat_velocity': v_ego_aligned[0],
-                        'ann_long_velocity': v_ann_aligned[1],
-                        'ann_lat_velocity': v_ann_aligned[0],
-                        'long_distance': rotation(-heading_angle, translation)[1],
-                        'lat_distance': rotation(-heading_angle, translation)[0],
-                        'min_long_distance': d_long_min,
-                        'min_lat_distance': d_lat_min,
-                        'same_direction': same_direction
-                    })
+        if score:
+            scores.append(score)
 
         # continue to the next annotation
         if not annotation['next']:
@@ -188,6 +87,118 @@ def generate_scores_for_instance(nusc, instance_token, aggressive=True):
         else:
             annotation = nusc.get('sample_annotation', annotation['next'])
     return scores
+
+
+def generate_score_for_annotation(annotation, nusc, params, scores):
+    # check vehicle is not parked
+    if any([nusc.get('attribute', t)['name'] == 'vehicle.parked'
+            or nusc.get('attribute', t)['name'] == 'cycle.without_rider'
+            for t in annotation['attribute_tokens']]):
+        return None
+
+    # find velocities of ego and annotated vehicle
+    v_ego = get_ego_velocity(nusc, annotation['sample_token'])
+    v_ann = nusc.box_velocity(annotation['token'])
+
+    # Check all velocities are valid
+    if np.isnan(v_ego).any() or np.isnan(v_ann).any():
+        return None
+
+    # find the longitudinal and lateral velocities w.r.t the heading of the ego
+    heading_angle = get_ego_heading(nusc, annotation['sample_token'])
+
+    v_ego_aligned = rotation(-heading_angle, v_ego)
+    v_ann_aligned = rotation(-heading_angle, v_ann)
+
+    # Not yet handling reversing
+    if v_ego_aligned[1] < 0:
+        return None
+
+    translation = get_delta_translation(nusc, annotation, heading_angle)
+
+    # check the relative positions of the vehicles
+    ego_is_behind = is_right_of(-heading_angle + np.pi / 2, np.zeros(2), translation)
+    ego_is_right = is_right_of(-heading_angle, np.zeros(2), translation)
+
+    same_direction = None
+
+    if ego_is_behind:
+        # find the longitudinal distance between the vehicles w.r.t the
+        # heading of the ego
+        d_long = np.abs(rotation(-heading_angle, translation)[1])
+        # find the minimum longitudinal distance between the cars
+        if v_ann_aligned[1] >= 0:
+            # cars travelling in same direction
+            same_direction = True
+            d_long_min = find_min_long_distance(norm(v_ego_aligned[1]),
+                                                norm(v_ann_aligned[1]),
+                                                params)
+        else:
+            # cars travelling in opposite directions
+            same_direction = False
+            d_long_min = find_min_long_distance_opposite_direction(norm(v_ego_aligned[1]),
+                                                                   -norm(v_ann_aligned[1]),
+                                                                   params)
+        long_score = generate_individual_score(d_long_min, d_long, gradient=0.4)
+    else:
+        # ego doesn't hold responsibility for vehicle behind
+        long_score = 1
+        d_long = None
+        d_long_min = None
+
+    # find the lateral distance between the vehicles w.r.t the heading of the ego
+    d_lat = np.abs(rotation(-heading_angle, translation)[0])
+
+    # Assign velocities to input variables for RSS rule 2.
+    # c1 is on the left, c2 is on the right, with velocities v1 and v2 respectively
+    if ego_is_right:
+        v1 = v_ann_aligned[0]
+        v2 = v_ego_aligned[0]
+    else:
+        v1 = v_ego_aligned[0]
+        v2 = v_ann_aligned[0]
+
+    # find the minimum lateral distances between the cars
+    d_lat_min = find_min_lat_distance(v1,
+                                      v2,
+                                      params)
+    lat_score = generate_individual_score(d_lat_min, d_lat, gradient=1)
+
+    # if either the lateral distance or the longitudinal distance is okay,
+    # then we consider the situation safe, hence max of each score is used
+    max_score = max([long_score, lat_score])
+
+    # note the reason for the score
+    if max_score == 1:
+        reason = None
+    elif max_score == 0:
+        reason = 'Too close'
+    elif max_score == long_score:
+        reason = 'Longitudinally too close'
+    elif max_score == lat_score:
+        reason = 'Laterally too close'
+    else:
+        reason = 'Unknown'
+
+    # Copy reason from last iteration if possible when current reason is unhelpful
+    if reason == "Too close" and len(scores) > 0:
+        if scores[-1]['reason'] is not None:
+            reason = scores[-1]['reason']
+
+    return {
+        'annotation': annotation['token'],
+        'reason': reason,
+        'score': max_score,
+        'ego_long_velocity': v_ego_aligned[1],
+        'ego_lat_velocity': v_ego_aligned[0],
+        'ann_long_velocity': v_ann_aligned[1],
+        'ann_lat_velocity': v_ann_aligned[0],
+        'long_distance': rotation(-heading_angle, translation)[1],
+        'lat_distance': rotation(-heading_angle, translation)[0],
+        'min_long_distance': d_long_min,
+        'min_lat_distance': d_lat_min,
+        'same_direction': same_direction
+    }
 
 
 def find_min_long_distance(v_r, v_f, params):
