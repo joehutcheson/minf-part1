@@ -88,7 +88,7 @@ def scene(token):
             ax.text(0.1, 0.1, 'NuScenes API was unable to render annotation', fontsize=25, color='red')
             plt.savefig(out_path)
 
-    return render_template('scene.html', nusc=usc, token=token, scores=scores)
+    return render_template('scene.html', nusc=nusc, token=token, scores=scores)
 
 @app.route('/dataset_stats')
 def dataset_stats():
@@ -174,6 +174,7 @@ def main():
 
     """
 
+    # removes any existing rendered images
     temp_render_dir = 'static/temp_renders'
     if os.path.exists(temp_render_dir):
         shutil.rmtree(temp_render_dir)
