@@ -2,7 +2,7 @@ from unittest import TestCase
 import numpy as np
 
 from scoring import find_min_long_distance, find_min_long_distance_opposite_direction, \
-    find_min_lat_distance, generate_individual_score, find_perpendicular_heading, is_right_of, angle_to_vector
+    find_min_lat_distance, generate_individual_score, is_right_of, angle_to_vector
 from constants import *
 
 
@@ -181,43 +181,6 @@ class TestGenerateIndividualScore(TestCase):
         result = generate_individual_score(minimum, actual, gradient=1)
 
         self.assertAlmostEqual(expected, result)
-
-
-class TestFindPerpendicularHeading(TestCase):
-    def test_0_degrees(self):
-        v = [0, 1]
-        expected = [1, 0]
-        actual = find_perpendicular_heading(v)
-
-        np.testing.assert_array_equal(expected, actual)
-
-    def test_90_degrees(self):
-        v = [1, 0]
-        expected = [0, -1]
-        actual = find_perpendicular_heading(v)
-
-        np.testing.assert_array_equal(expected, actual)
-
-    def test_180_degrees(self):
-        v = [0, -1]
-        expected = [-1, 0]
-        actual = find_perpendicular_heading(v)
-
-        np.testing.assert_array_equal(expected, actual)
-
-    def test_270_degrees(self):
-        v = [-1, 0]
-        expected = [0, 1]
-        actual = find_perpendicular_heading(v)
-
-        np.testing.assert_array_equal(expected, actual)
-
-    def test_no_direction(self):
-        v = [0, 0]
-        expected = [0, 0]
-        actual = find_perpendicular_heading(v)
-
-        np.testing.assert_array_equal(expected, actual)
 
 
 class TestIsRightOf(TestCase):

@@ -326,19 +326,6 @@ def generate_individual_score(minimum, actual, gradient=0.2):
     return min(1, score)  # score cannot be greater than 1
 
 
-def find_perpendicular_heading(heading):
-    """
-    Takes a heading vector and finds the vector rotated 90 degrees around z axis
-
-        Parameters:
-            heading: heading vector
-
-        Returns:
-            perpendicular_heading
-    """
-    return np.array([heading[1], -heading[0]])
-
-
 def is_right_of(theta, p1, p2):
     """
     Finds out if a point is to the right of another w.r.t the direction given by v
