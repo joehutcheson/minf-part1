@@ -215,6 +215,7 @@ def find_min_long_distance(v_r, v_f, params):
     assert v_r >= 0
     assert v_f >= 0
 
+    # find constant parameters
     a_max_accel = params['a_long_max_accel']
     a_min_brake = params['a_long_min_brake']
     a_max_brake = params['a_long_max_brake']
@@ -247,6 +248,7 @@ def find_min_long_distance_opposite_direction(v_1, v_2, params):
     assert v_1 >= 0
     assert v_2 < 0
 
+    # find constant parameters
     a_min_brake = params['a_long_min_brake']
     a_min_brake_corr = params['a_long_min_brake_correct']
     a_max_accel = params['a_long_max_accel']
@@ -279,6 +281,7 @@ def find_min_lat_distance(v_1, v_2, params):
 
     """
 
+    # find constant parameters
     mu = params['mu']
     a_lat_min_brake = params['a_lat_min_brake']
     a_lat_max_accel = params['a_lat_max_accel']
@@ -343,6 +346,7 @@ def is_right_of(theta, p1, p2):
     p1 = p1[0:2]
     p2 = p2[0:2]
 
+    # rotate the positions
     p1 = rotation(theta, p1)
     p2 = rotation(theta, p2)
 
@@ -352,19 +356,3 @@ def is_right_of(theta, p1, p2):
     if p1[0] < p2[0]:
         return False
     return None
-
-
-def angle_to_vector(a):
-    """
-    Converts an angle in radians to a unit vector with the angle's heading.
-
-    Args:
-        a: input angle
-
-    Returns: unit vector with heading of input angle
-
-    """
-
-    x = -np.sin(a)
-    y = np.cos(a)
-    return np.array([x, y])
