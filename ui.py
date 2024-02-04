@@ -7,7 +7,6 @@ from flask import Flask, render_template, redirect
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import patches
-import seaborn as sns
 
 import constants
 

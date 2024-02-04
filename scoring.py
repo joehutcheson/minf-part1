@@ -12,6 +12,7 @@ def generate_scores_for_scene(nusc, scene_token, aggressive=True):
         aggressive: If true, then aggressive RSS parameters are used, otherwise conservative parameters are used
 
     Returns:
+        scores: list of score dictionaries
 
     """
 
@@ -20,9 +21,6 @@ def generate_scores_for_scene(nusc, scene_token, aggressive=True):
     scene = nusc.get('scene', scene_token)
 
     sample = nusc.get('sample', scene['first_sample_token'])
-
-    def get_score(score_dict):
-        return score_dict['score']
 
     instances = set()
 
@@ -37,7 +35,7 @@ def generate_scores_for_scene(nusc, scene_token, aggressive=True):
             if instance_token not in instances and 'vehicle' in category:
                 s = generate_scores_for_instance(nusc, instance_token, aggressive=aggressive)
                 if s:
-                    s = min(s, key=get_score)
+                    s = min(s, key=lambda score_dict: score_dict['score'])  # get minimum score
                     s['instance'] = instance_token
                     scores.append(s)
                     instances.add(instance_token)
