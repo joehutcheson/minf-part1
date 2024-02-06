@@ -42,7 +42,6 @@ def get_ego_velocity(nusc, sample_token):
 
     delta_translation = np.array(ego_pose_next['translation']) - np.array(ego_pose_prev['translation'])
     delta_time = (ego_pose_next['timestamp'] - ego_pose_prev['timestamp']) * 1e-6
-    assert delta_time != 0  # to avoid divide by zero error
     velocity = delta_translation / delta_time
 
     return velocity
