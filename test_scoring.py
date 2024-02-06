@@ -2,7 +2,7 @@ from unittest import TestCase
 import numpy as np
 
 from scoring import find_min_long_distance, find_min_long_distance_opposite_direction, \
-    find_min_lat_distance, generate_individual_score, is_right_of, angle_to_vector
+    find_min_lat_distance, generate_individual_score, is_right_of
 from constants import *
 
 
