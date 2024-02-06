@@ -22,6 +22,7 @@ def generate_scores_for_scene(nusc, scene_token, aggressive=True):
 
     sample = nusc.get('sample', scene['first_sample_token'])
 
+    # set stores instances that have been processed
     instances = set()
 
     done = False
@@ -179,7 +180,7 @@ def generate_score_for_annotation(annotation, nusc, params, scores):
         reason = 'Unknown'
 
     # Copy reason from last iteration if possible when current reason is unhelpful
-    if reason == "Too close" and len(scores) > 0:
+    if reason == 'Too close' and len(scores) > 0:
         if scores[-1]['reason'] is not None:
             reason = scores[-1]['reason']
 
@@ -306,7 +307,7 @@ def find_min_lat_distance(v_1, v_2, params):
     return max([mu, mu + d_min])
 
 
-def generate_individual_score(minimum, actual, gradient=0.2):
+def generate_individual_score(minimum, actual, gradient):
     """
     Generates a score between 0 and 1 given minimum and actual values
 
